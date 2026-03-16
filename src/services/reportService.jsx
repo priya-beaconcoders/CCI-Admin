@@ -49,6 +49,45 @@ export const getDailySummary = async (date) => {
 };
 
 /**
+ * Get Bookings by Date - /api/bookings (with date filter if supported)
+ */
+export const getBookingsByDate = async (date) => {
+  try {
+    // Try with date parameter first
+    let response = await api.get("/bookings", {
+      params: { date }
+    });
+
+    console.log("📅 Bookings by Date API Response (with date filter):", response.data);
+    
+    // If the API doesn't support date filtering, get all bookings and filter client-side
+    if (!response.data?.data || response.data.data.length === 0) {
+      console.log("🔄 No bookings with date filter, fetching all bookings...");
+      response = await api.get("/bookings");
+      console.log("📅 All Bookings API Response:", response.data);
+      
+      // Filter bookings by check-in date on client side
+      if (response.data?.data) {
+        const filteredBookings = response.data.data.filter(booking => {
+          const bookingDate = booking.check_in_date || booking.check_in || booking.created_at;
+          return bookingDate && bookingDate.includes(date);
+        });
+        console.log("🔍 FILTERED BOOKINGS FOR DATE", date, ":", filteredBookings);
+        response.data.data = filteredBookings;
+      }
+    }
+
+    return response;
+  } catch (error) {
+    console.error("❌ Bookings by Date API Error:", error);
+    // Return empty array if API fails
+    return {
+      data: { data: [] }
+    };
+  }
+};
+
+/**
  * Revenue Trends Report
  */
 export const getRevenueTrends = async (startDate, endDate) => {
@@ -132,6 +171,7 @@ export const exportReport = async (reportType, filters, data = null) => {
 export const exportReportMultipleFormats = async (reportType, filters, data, format = 'excel') => {
   try {
     console.log(`📤 Exporting ${reportType} report as ${format}`, filters);
+    console.log("📤 Original data for export:", data);
 
     // If data not provided, fetch it
     if (!data) {
@@ -161,17 +201,20 @@ export const exportReportMultipleFormats = async (reportType, filters, data, for
 
     // Normalize Data (Handle {data: ...} wrapper)
     const normalizedData = (data && data.data) ? data.data : data;
+    console.log("📤 Normalized data for export:", normalizedData);
 
     // Validate data
     if (!normalizedData || Object.keys(normalizedData).length === 0) {
       // Try to see if data itself is the array (for list endpoints)
       if (!Array.isArray(data) && !Array.isArray(normalizedData)) {
+        console.error("❌ No data available for export");
         throw new Error('No data available for export');
       }
     }
 
     // Final check on normalized data being useful
     const dataToUse = normalizedData || data;
+    console.log("📤 Final data to use for export:", dataToUse);
 
     // Call appropriate export function based on format
     switch (format) {
@@ -396,33 +439,58 @@ const exportAsPDF = async (reportType, data, filters) => {
 // --- Helper Functions for Data Formatting ---
 
 const formatCollectionDataForExport = (data) => {
-  // Check for nested structure or direct array
-  const dailyRevenue = data.daily_revenue || data.dailyRevenue || (Array.isArray(data) ? data : []);
+  // Check for different data structures
+  const summary = data.summary || data.daily_revenue || data.dailyRevenue || (Array.isArray(data) ? data : []);
 
-  if (!dailyRevenue || !Array.isArray(dailyRevenue) || dailyRevenue.length === 0) {
+  if (!summary || !Array.isArray(summary) || summary.length === 0) {
+    console.log("🔍 COLLECTION DATA FOR EXPORT:", data);
     return [];
   }
 
-  return dailyRevenue.map(item => ({
-    'Date': item.date ? format(new Date(item.date), 'yyyy-MM-dd') : 'N/A',
-    'Revenue': item.revenue || 0,
-    'Bookings': item.bookings || 0,
-    'Avg Rate': item.avg_rate || 0,
-    'Occupancy (%)': item.occupancy || 0
+  return summary.map(item => ({
+    'Payment Mode': item.payment_mode || 'N/A',
+    'Total Amount': item.total_amount || 0,
+    'Transactions': item.total_transactions || 0
   }));
 };
 
 const formatDailyDataForExport = (data) => {
   const revenueByHour = data.revenue_by_hour || data.revenueByHour || [];
+  const bookings = data.bookings || [];
 
-  if (!revenueByHour || revenueByHour.length === 0) {
-    return [];
+  if ((!revenueByHour || revenueByHour.length === 0) && (!bookings || bookings.length === 0)) {
+    console.log("🔍 DAILY DATA FOR EXPORT:", data);
+    return [{
+      'Date': data.date || new Date().toISOString().split('T')[0],
+      'Total Bookings': data.summary?.total_bookings || data.total_bookings || 0,
+      'Total Revenue': data.summary?.total_revenue || data.total_revenue || 0,
+      'Cancelled Bookings': data.summary?.cancelled_bookings || data.cancelled_bookings || 0,
+      'Total Paid': data.summary?.total_paid || data.total_paid || 0,
+      'Balance Amount': data.summary?.balance_amt || data.balance_amt || 0
+    }];
   }
 
-  return revenueByHour.map(item => ({
-    'Time Slot': item.hour || 'N/A',
-    'Revenue': item.revenue || 0
-  }));
+  // If we have hourly revenue data
+  if (revenueByHour.length > 0) {
+    return revenueByHour.map(item => ({
+      'Hour': item.hour || 'N/A',
+      'Revenue': item.revenue || 0,
+      'Bookings': item.bookings || 0
+    }));
+  }
+
+  // If we have bookings data
+  if (bookings.length > 0) {
+    return bookings.map(item => ({
+      'Booking ID': item.id || 'N/A',
+      'Guest Name': item.guest_name || 'N/A',
+      'Room': item.room_no || 'N/A',
+      'Status': item.status || 'N/A',
+      'Amount': item.total_amt || 0
+    }));
+  }
+
+  return [];
 };
 
 const formatRevenueDataForExport = (data) => {

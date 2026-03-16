@@ -482,6 +482,13 @@ export default function AdminLayout() {
                   </div>
                 </div>
               </div>
+              <div className="mt-3 pt-3 border-t border-gray-200/30 dark:border-gray-700/30 text-center">
+                <p className={`text-xs ${
+                  darkMode ? 'text-gray-500' : 'text-gray-400'
+                }`}>
+                  Developed and managed by Beacon Coders
+                </p>
+              </div>
             </div>
           </footer>
         </main>

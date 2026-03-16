@@ -153,7 +153,7 @@ function RoomsMaster({ setError, setLoading }) {
   const [formError, setFormError] = useState("");
   const [form, setForm] = useState({
     room_no: "",
-    type: "Single",
+    type: "Single Suite",
     guest_limit: 2,
     status: "Available",
     price_3day: "",
@@ -244,13 +244,36 @@ function RoomsMaster({ setError, setLoading }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure?")) return;
+    if (!window.confirm("Are you sure you want to delete this room?")) return;
     try {
       setLoading(true);
+      setError("");
+      console.log("🗑️ Deleting room ID:", id);
       await roomService.deleteRoom(id);
       await fetchRooms();
     } catch (err) {
-      setError("Failed to delete room.");
+      console.error("❌ DELETE ERROR FULL OBJECT:", err);
+      console.error("❌ DELETE ERROR RESPONSE:", err.response);
+      console.error("❌ DELETE ERROR DATA:", err.response?.data);
+      console.error("❌ DELETE STATUS:", err.response?.status);
+      
+      let errorMsg = "Failed to delete room.";
+      
+      // Check for specific error messages
+      if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      } else if (err.response?.status === 422) {
+        errorMsg = "Cannot delete room. It may be linked to existing bookings or have validation errors.";
+      } else if (err.response?.status === 403) {
+        errorMsg = "You don't have permission to delete this room.";
+      } else if (err.response?.status === 404) {
+        errorMsg = "Room not found.";
+      }
+      
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -259,7 +282,7 @@ function RoomsMaster({ setError, setLoading }) {
   const resetForm = () => {
     setForm({
       room_no: "",
-      type: "Single",
+      type: "Single Suite",
       guest_limit: 2,
       status: "Available",
       price_3day: "",
@@ -274,7 +297,7 @@ function RoomsMaster({ setError, setLoading }) {
     setEditingRoom(room);
     setForm({
       room_no: room.room_no || "",
-      type: room.type || "Single",
+      type: room.type || "Single Suite",
       guest_limit: room.guest_limit || 2,
       status: room.status || "Available",
       price_3day: room.price_3day || "",

@@ -268,6 +268,9 @@ export default function Login() {
                 <p className="text-xs text-gray-400">
                   By signing in, you agree to our Terms of Service and Privacy Policy.
                 </p>
+                <p className="text-xs text-gray-400">
+                  Developed and managed by Beacon Coders
+                </p>
               </div>
             </div>
           </div>

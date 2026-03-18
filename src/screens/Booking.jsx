@@ -709,65 +709,57 @@ export default function Bookings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="p-0 sm:p-2">
         <div className="max-w-7xl mx-auto">
           {/* Skeleton Controls */}
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-4 animate-pulse">
+          <div className="bg-white/90 rounded-xl shadow-sm p-4 mb-4 border border-gray-100">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="flex gap-3">
-                <div className="h-9 w-48 bg-gray-200 rounded-lg" />
-                <div className="h-9 w-28 bg-gray-200 rounded-lg" />
+                <div className="h-9 w-48 bg-gray-100 rounded-lg animate-shimmer" />
+                <div className="h-9 w-28 bg-gray-100 rounded-lg animate-shimmer" />
               </div>
-              <div className="h-9 w-32 bg-orange-200 rounded-lg" />
+              <div className="h-9 w-32 bg-orange-100/50 rounded-lg animate-shimmer" />
             </div>
           </div>
           {/* Skeleton Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 animate-pulse">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm p-4">
-                <div className="h-3 w-20 bg-gray-200 rounded mb-2" />
-                <div className="h-7 w-12 bg-gray-300 rounded" />
+              <div key={i} className="bg-white/90 rounded-xl shadow-sm p-4 border border-gray-100">
+                <div className="h-3 w-20 bg-gray-50 rounded mb-2 animate-shimmer" />
+                <div className="h-7 w-12 bg-gray-100 rounded animate-shimmer" />
               </div>
             ))}
           </div>
           {/* Skeleton Table — mirrors 5-column layout */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse">
+          <div className="bg-white/90 rounded-xl shadow-sm overflow-hidden border border-gray-100">
             {/* Header Row */}
-            <div className="flex items-center bg-gray-50 border-b border-gray-200 px-6 py-4 gap-4">
-              <div className="h-3 w-28 bg-gray-300 rounded flex-[2]" />
-              <div className="h-3 w-24 bg-gray-300 rounded flex-[2]" />
-              <div className="h-3 w-16 bg-gray-300 rounded flex-[2]" />
-              <div className="h-3 w-14 bg-gray-300 rounded flex-[1]" />
-              <div className="h-3 w-16 bg-gray-300 rounded flex-[2]" />
+            <div className="flex items-center bg-gray-50/50 border-b border-gray-100 px-6 py-4 gap-4">
+              <div className="h-3 w-28 bg-gray-100 rounded flex-[2] animate-shimmer" />
+              <div className="h-3 w-24 bg-gray-100 rounded flex-[2] animate-shimmer" />
+              <div className="h-3 w-16 bg-gray-100 rounded flex-[2] animate-shimmer" />
+              <div className="h-3 w-14 bg-gray-100 rounded flex-[1] animate-shimmer" />
+              <div className="h-3 w-16 bg-gray-100 rounded flex-[2] animate-shimmer" />
             </div>
             {/* Data Rows */}
             {[...Array(7)].map((_, i) => (
-              <div key={i} className="flex items-start px-6 py-4 border-b border-gray-100 gap-4">
+              <div key={i} className="flex items-start px-6 py-4 border-b border-gray-50 gap-4">
                 {/* Guest Details */}
                 <div className="flex-[2] space-y-2">
-                  <div className="h-3.5 w-32 bg-gray-200 rounded" />
-                  <div className="h-2.5 w-20 bg-gray-100 rounded" />
-                  <div className="h-2.5 w-16 bg-gray-100 rounded" />
+                  <div className="h-3.5 w-32 bg-gray-100 rounded animate-shimmer" />
+                  <div className="h-2.5 w-20 bg-gray-50 rounded animate-shimmer" />
+                  <div className="h-2.5 w-16 bg-gray-50 rounded animate-shimmer" />
                 </div>
-                {/* Room Details */}
-                <div className="flex-[2] space-y-2">
-                  <div className="h-3.5 w-20 bg-gray-200 rounded" />
-                  <div className="h-2.5 w-24 bg-gray-100 rounded" />
-                </div>
+                {/* Room */}
+                <div className="flex-[2] h-4 w-24 bg-gray-50 rounded animate-shimmer" />
                 {/* Dates */}
                 <div className="flex-[2] space-y-2">
-                  <div className="h-3 w-24 bg-gray-200 rounded" />
-                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                  <div className="h-3 w-24 bg-gray-50 rounded animate-shimmer" />
+                  <div className="h-2 w-20 bg-gray-50 rounded animate-shimmer" />
                 </div>
                 {/* Status */}
-                <div className="flex-[1]">
-                  <div className="h-6 w-20 bg-gray-200 rounded-full" />
-                </div>
+                <div className="flex-[1] h-6 w-14 bg-gray-50 rounded-full animate-shimmer" />
                 {/* Actions */}
-                <div className="flex-[2] flex items-center gap-2">
-                  <div className="h-7 w-7 bg-gray-200 rounded-lg" />
-                  <div className="h-7 w-7 bg-gray-200 rounded-lg" />
-                </div>
+                <div className="flex-[2] h-7 w-16 bg-gray-100 rounded-lg animate-shimmer" />
               </div>
             ))}
           </div>
@@ -778,7 +770,7 @@ export default function Bookings() {
 
   /* ================= UI ================= */
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="p-0 sm:p-2">
       <div className="max-w-7xl mx-auto">
 
         {/* Error Message */}
@@ -793,7 +785,7 @@ export default function Bookings() {
         )}
 
         {/* Controls */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <div className="relative flex-1">
@@ -835,17 +827,17 @@ export default function Bookings() {
 
         {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Total Bookings</p>
             <p className="text-2xl font-bold text-gray-900">{bookings.length}</p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Active Guests</p>
             <p className="text-2xl font-bold text-gray-900">
               {bookings.filter(b => b.status === STATUS.CHECKED_IN).length}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Today's Check-ins</p>
             <p className="text-2xl font-bold text-gray-900">
               {(() => {
@@ -854,7 +846,7 @@ export default function Bookings() {
               })()}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
             <p className="text-sm text-gray-600">Available Rooms</p>
             <p className="text-2xl font-bold text-gray-900">
               {rooms.filter(r => r.status === "Available").length}
@@ -863,7 +855,7 @@ export default function Bookings() {
         </div>
 
         {/* Bookings Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -1141,7 +1133,7 @@ export default function Bookings() {
                 </div>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 {/* Guest Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1389,7 +1381,7 @@ export default function Bookings() {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto p-6 max-h-[70vh]">
 
                 {/* Search Bar - Full Width at Top */}
                 <div className="mb-6">

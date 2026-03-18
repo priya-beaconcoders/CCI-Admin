@@ -115,7 +115,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="p-0 sm:p-2">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -135,7 +135,7 @@ export default function Settings() {
         )}
 
         {/* Header with Actions */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-50 rounded-lg">
@@ -227,7 +227,7 @@ export default function Settings() {
         </div>
 
         {/* All Settings Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900">All Settings</h3>
             <p className="text-sm text-gray-600">Complete list of system configuration</p>
@@ -352,7 +352,7 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Setting Key *

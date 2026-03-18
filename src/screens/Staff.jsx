@@ -101,6 +101,58 @@ function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageC
   );
 }
 
+function StaffSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-100 shadow-sm p-4 h-20 flex justify-between items-center">
+        <div className="flex gap-3">
+           <div className="w-10 h-10 rounded-lg bg-gray-100 animate-shimmer" />
+           <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-100 rounded animate-shimmer" />
+              <div className="h-2.5 w-48 bg-gray-50 rounded animate-shimmer" />
+           </div>
+        </div>
+        <div className="flex gap-3">
+           <div className="h-10 w-48 bg-gray-50 rounded-lg animate-shimmer" />
+           <div className="h-10 w-32 bg-blue-50/50 rounded-lg animate-shimmer" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white/90 rounded-xl p-4 border border-gray-100 h-20 space-y-3">
+             <div className="h-2 w-16 bg-gray-50 rounded animate-shimmer" />
+             <div className="h-6 w-12 bg-gray-100 rounded animate-shimmer" />
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="h-12 bg-gray-50/50 border-b border-gray-100 animate-shimmer" />
+        <div className="p-0">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="p-4 px-6 border-b border-gray-50 flex items-center justify-between">
+              <div className="flex gap-3 items-center">
+                 <div className="w-10 h-10 rounded-full bg-gray-50 animate-shimmer" />
+                 <div className="space-y-2">
+                    <div className="h-4 w-40 bg-gray-100 rounded animate-shimmer" />
+                    <div className="h-2 w-24 bg-gray-50 rounded animate-shimmer" />
+                 </div>
+              </div>
+              <div className="hidden md:block space-y-2">
+                 <div className="h-3 w-32 bg-gray-50 rounded animate-shimmer" />
+                 <div className="h-2 w-24 bg-gray-50/50 rounded animate-shimmer" />
+              </div>
+              <div className="h-8 w-24 bg-gray-50 rounded-full animate-shimmer" />
+              <div className="h-8 w-16 bg-gray-50/50 rounded-lg animate-shimmer" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Staff() {
   const [staff, setStaff] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -292,8 +344,22 @@ export default function Staff() {
     }
   };
 
+  if (loading && staff.length === 0) {
+    return (
+      <div className="p-0 sm:p-2">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8 space-y-2">
+            <div className="h-8 w-48 bg-gray-200/50 rounded animate-shimmer" />
+            <div className="h-4 w-64 bg-gray-100/50 rounded animate-shimmer" />
+          </div>
+          <StaffSkeleton />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="p-0 sm:p-2">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -313,7 +379,7 @@ export default function Staff() {
         )}
 
         {/* Header with Actions */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-lg">
@@ -374,7 +440,7 @@ export default function Staff() {
         </div>
 
         {/* Staff Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

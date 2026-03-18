@@ -374,7 +374,7 @@ export default function Reports() {
 
   if (loading && !collectionData && !dailyData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
           <p className="text-gray-700 font-medium text-lg">Loading reports...</p>
@@ -385,7 +385,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="p-0 sm:p-2">
       <div className="max-w-7xl mx-auto">
         {/* Header with Export/Refresh at TOP-RIGHT CORNER */}
         <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -658,7 +658,7 @@ export default function Reports() {
         )}
 
         {/* Main Content Area */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
           {/* Tab Navigation */}
           <div className="border-b border-gray-200">
             <div className="flex flex-wrap gap-1 p-4">

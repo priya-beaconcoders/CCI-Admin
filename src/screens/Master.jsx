@@ -12,7 +12,7 @@ export default function Masters() {
   const [error, setError] = useState("");
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="p-0 sm:p-2">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -32,7 +32,7 @@ export default function Masters() {
         )}
 
         {/* ===== Tabs ===== */}
-        <div className="bg-white rounded-xl shadow-sm p-2 mb-6 inline-flex">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-2 mb-6 inline-flex">
           <Tab 
             label="Rooms" 
             icon={<Home className="w-4 h-4" />}
@@ -151,6 +151,7 @@ function RoomsMaster({ setError, setLoading }) {
   const [showForm, setShowForm] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [formError, setFormError] = useState("");
+  const [dataLoading, setDataLoading] = useState(true);
   const [form, setForm] = useState({
     room_no: "",
     type: "Single Suite",
@@ -169,7 +170,7 @@ function RoomsMaster({ setError, setLoading }) {
 
   const fetchRooms = async () => {
     try {
-      setLoading(true);
+      setDataLoading(true);
       const response = await roomService.getRooms();
       // Ensure we set an array
       const data = Array.isArray(response.data) ? response.data : (response.data?.data || []);
@@ -180,7 +181,7 @@ function RoomsMaster({ setError, setLoading }) {
       console.error("❌ ROOMS FETCH ERROR:", err);
       setError("Failed to load rooms. Please try again.");
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -306,6 +307,15 @@ function RoomsMaster({ setError, setLoading }) {
     });
     setShowForm(true);
   };
+
+  if (dataLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm p-5 h-20 animate-shimmer opacity-50" />
+        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm h-[400px] animate-shimmer opacity-30" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -433,6 +443,7 @@ function MembersMaster({ setError, setLoading }) {
   const [showForm, setShowForm] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [formError, setFormError] = useState("");
+  const [dataLoading, setDataLoading] = useState(true);
   const [form, setForm] = useState({ 
     name: "", 
     membership_no: "", 
@@ -447,7 +458,7 @@ function MembersMaster({ setError, setLoading }) {
 
   const fetchMembers = async () => {
     try {
-      setLoading(true);
+      setDataLoading(true);
       const response = await memberService.getMembers();
       const data = Array.isArray(response.data) ? response.data : (response.data?.data || []);
       setMembers(data);
@@ -455,7 +466,7 @@ function MembersMaster({ setError, setLoading }) {
     } catch (err) {
       setError("Failed to load members.");
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -555,6 +566,15 @@ function MembersMaster({ setError, setLoading }) {
     setFormError("");
     setFieldErrors({});
   };
+
+  if (dataLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm p-5 h-20 animate-shimmer opacity-50" />
+        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm h-[400px] animate-shimmer opacity-30" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -5,7 +5,7 @@ export const getBookings = () => api.get("/bookings");
 
 export const getBookingById = (id) => api.get(`/bookings/${id}`);
 export const createBooking = (data) => api.post("/bookings", data);
-export const updateBooking = (id, data) => api.post(`/bookings/${id}`, { ...data, _method: "PUT" });
+export const updateBooking = (id, data, options = {}) => api.post(`/bookings/${id}`, { ...data, _method: "PUT" }, options);
 
 // Try multiple methods for delete — server may block DELETE
 export const deleteBooking = async (id) => {
@@ -39,11 +39,11 @@ export const deleteBooking = async (id) => {
   }
 };
 
-export const checkIn = (id) =>
-  api.post(`/bookings/${id}/check-in`);
+export const checkIn = (id, options = {}) =>
+  api.post(`/bookings/${id}/check-in`, undefined, options);
 
-export const checkOut = (id) =>
-  api.post(`/bookings/${id}/check-out`);
+export const checkOut = (id, options = {}) =>
+  api.post(`/bookings/${id}/check-out`, undefined, options);
 
 export const getPayments = (bookingId) => api.get(`/bookings/${bookingId}/payments`);
 

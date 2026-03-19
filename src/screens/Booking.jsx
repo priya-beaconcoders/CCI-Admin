@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Calendar, User, Users, Home, X, CheckCircle, AlertCircle, Edit2, Trash2, Eye, Search, Filter, CreditCard, DollarSign, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
+import { Calendar, User, Users, Home, X, CheckCircle, AlertCircle, Edit2, Pencil, Trash2, Eye, Search, Filter, CreditCard, DollarSign, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
 
 /* ================= STATUS CONSTANTS ================= */
 const STATUS = {
@@ -30,10 +31,10 @@ const getConfirmationMessage = (newStatus) => {
 
 const getStatusColor = (status) => {
   switch (status) {
-    case STATUS.CONFIRMED:   return "bg-blue-100 text-blue-800 border-blue-200";
-    case STATUS.CHECKED_IN:  return "bg-green-100 text-green-800 border-green-200";
-    case STATUS.CHECKED_OUT: return "bg-gray-100 text-gray-700 border-gray-200";
-    case STATUS.CANCELLED:   return "bg-red-100 text-red-700 border-red-200";
+    case STATUS.CONFIRMED:   return "bg-blue-100 text-blue-800 border-blue-200 shadow-sm";
+    case STATUS.CHECKED_IN:  return "bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm";
+    case STATUS.CHECKED_OUT: return "bg-gray-100 text-gray-700 border-gray-200 shadow-inner";
+    case STATUS.CANCELLED:   return "bg-rose-100 text-rose-700 border-rose-200 shadow-sm";
     default: return "bg-gray-100 text-gray-700 border-gray-200";
   }
 };
@@ -52,6 +53,7 @@ import {
 import { getRooms } from "../services/roomServices";
 
 export default function Bookings() {
+  const navigate = useNavigate();
   /* ================= STATE ================= */
   const [bookings, setBookings] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -61,7 +63,7 @@ export default function Bookings() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -709,73 +711,100 @@ export default function Bookings() {
 
   if (loading) {
     return (
-      <div className="p-0 sm:p-2">
-        <div className="max-w-7xl mx-auto">
-          {/* Skeleton Controls */}
-          <div className="bg-white/90 rounded-xl shadow-sm p-4 mb-4 border border-gray-100">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="flex gap-3">
-                <div className="h-9 w-48 bg-gray-100 rounded-lg animate-shimmer" />
-                <div className="h-9 w-28 bg-gray-100 rounded-lg animate-shimmer" />
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 p-0 overflow-hidden w-full">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 w-full overflow-hidden">
+          {/* Skeleton Controls — matches search + filter + add button */}
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-md p-4 mb-6 flex-shrink-0">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <div className="h-[46px] w-full sm:w-80 bg-gray-100 rounded-xl animate-shimmer" />
+                <div className="h-[38px] w-28 bg-gray-100 rounded-lg animate-shimmer" />
               </div>
-              <div className="h-9 w-32 bg-orange-100/50 rounded-lg animate-shimmer" />
+              <div className="h-[38px] w-full md:w-36 bg-orange-100/50 rounded-lg animate-shimmer" />
             </div>
           </div>
-          {/* Skeleton Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white/90 rounded-xl shadow-sm p-4 border border-gray-100">
-                <div className="h-3 w-20 bg-gray-50 rounded mb-2 animate-shimmer" />
-                <div className="h-7 w-12 bg-gray-100 rounded animate-shimmer" />
-              </div>
-            ))}
-          </div>
-          {/* Skeleton Table — mirrors 5-column layout */}
-          <div className="bg-white/90 rounded-xl shadow-sm overflow-hidden border border-gray-100">
-            {/* Header Row */}
-            <div className="flex items-center bg-gray-50/50 border-b border-gray-100 px-6 py-4 gap-4">
-              <div className="h-3 w-28 bg-gray-100 rounded flex-[2] animate-shimmer" />
-              <div className="h-3 w-24 bg-gray-100 rounded flex-[2] animate-shimmer" />
-              <div className="h-3 w-16 bg-gray-100 rounded flex-[2] animate-shimmer" />
-              <div className="h-3 w-14 bg-gray-100 rounded flex-[1] animate-shimmer" />
-              <div className="h-3 w-16 bg-gray-100 rounded flex-[2] animate-shimmer" />
+          
+          {/* Skeleton Table — uses real <table> with table-fixed matching actual column widths */}
+          <div className="flex-1 min-h-0 min-w-0 bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div className="overflow-hidden flex-1">
+              <table className="w-full table-fixed text-left border-separate border-spacing-0 min-w-[700px]">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
+                    <th className="w-[25%] py-4 px-4 border-b border-gray-100"><div className="h-3 w-24 bg-gray-200 rounded animate-shimmer" /></th>
+                    <th className="w-[15%] py-4 px-4 border-b border-gray-100"><div className="h-3 w-20 bg-gray-200 rounded animate-shimmer" /></th>
+                    <th className="w-[20%] py-4 px-4 border-b border-gray-100"><div className="h-3 w-12 bg-gray-200 rounded animate-shimmer" /></th>
+                    <th className="w-[20%] py-4 px-4 text-center border-b border-gray-100"><div className="h-3 w-14 bg-gray-200 rounded animate-shimmer mx-auto" /></th>
+                    <th className="w-[20%] py-4 px-4 text-right border-b border-gray-100"><div className="h-3 w-14 bg-gray-200 rounded animate-shimmer ml-auto" /></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {[...Array(8)].map((_, i) => (
+                    <tr key={i}>
+                      {/* Guest Details */}
+                      <td className="py-3 px-4">
+                        <div className="space-y-2">
+                          <div className="h-4 w-32 bg-gray-100 rounded animate-shimmer" />
+                          <div className="h-2 w-40 bg-gray-50 rounded animate-shimmer" />
+                        </div>
+                      </td>
+                      {/* Room Details */}
+                      <td className="py-3 px-4">
+                        <div className="space-y-2">
+                          <div className="h-3 w-20 bg-gray-100 rounded animate-shimmer" />
+                          <div className="h-2 w-16 bg-gray-50 rounded animate-shimmer" />
+                        </div>
+                      </td>
+                      {/* Dates */}
+                      <td className="py-3 px-4">
+                        <div className="space-y-2">
+                          <div className="h-3 w-24 bg-gray-50 rounded animate-shimmer" />
+                          <div className="h-3 w-24 bg-gray-50 rounded animate-shimmer" />
+                        </div>
+                      </td>
+                      {/* Status */}
+                      <td className="py-3 px-4 text-center">
+                        <div className="h-6 w-20 bg-gray-50 rounded-lg animate-shimmer mx-auto" />
+                      </td>
+                      {/* Actions */}
+                      <td className="py-3 px-4">
+                        <div className="flex justify-end gap-2">
+                          <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                          <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            {/* Data Rows */}
-            {[...Array(7)].map((_, i) => (
-              <div key={i} className="flex items-start px-6 py-4 border-b border-gray-50 gap-4">
-                {/* Guest Details */}
-                <div className="flex-[2] space-y-2">
-                  <div className="h-3.5 w-32 bg-gray-100 rounded animate-shimmer" />
-                  <div className="h-2.5 w-20 bg-gray-50 rounded animate-shimmer" />
-                  <div className="h-2.5 w-16 bg-gray-50 rounded animate-shimmer" />
-                </div>
-                {/* Room */}
-                <div className="flex-[2] h-4 w-24 bg-gray-50 rounded animate-shimmer" />
-                {/* Dates */}
-                <div className="flex-[2] space-y-2">
-                  <div className="h-3 w-24 bg-gray-50 rounded animate-shimmer" />
-                  <div className="h-2 w-20 bg-gray-50 rounded animate-shimmer" />
-                </div>
-                {/* Status */}
-                <div className="flex-[1] h-6 w-14 bg-gray-50 rounded-full animate-shimmer" />
-                {/* Actions */}
-                <div className="flex-[2] h-7 w-16 bg-gray-100 rounded-lg animate-shimmer" />
+            {/* Skeleton Pagination */}
+            <div className="mt-auto shrink-0 flex items-center justify-between bg-white/50 p-4 border-t border-gray-100 h-[68px]">
+              <div className="flex items-center gap-6">
+                 <div className="h-3 w-32 bg-gray-100 rounded animate-shimmer" />
+                 <div className="h-6 w-24 bg-gray-50 rounded animate-shimmer hidden sm:block" />
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                 <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+                 <div className="flex gap-1">
+                    <div className="h-7 w-7 bg-gray-100 rounded-lg animate-shimmer" />
+                    <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+                    <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+                 </div>
+                 <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ================= UI ================= */
   return (
-    <div className="p-0 sm:p-2">
-      <div className="max-w-7xl mx-auto">
-
+    <div className="flex-1 flex flex-col min-w-0 min-h-0 p-0 overflow-hidden w-full">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 w-full overflow-hidden">
         {/* Error Message */}
         {errorMessage && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 flex-shrink-0">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
             <p className="text-red-700">{errorMessage}</p>
             <button onClick={() => setErrorMessage("")} className="ml-auto">
@@ -785,17 +814,17 @@ export default function Bookings() {
         )}
 
         {/* Controls */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="sticky top-0 z-20 bg-white/95 supports-[backdrop-filter]:bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-md p-4 mb-6 flex-shrink-0">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-start lg:justify-between gap-4 md:gap-8 lg:gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <div className="relative flex-1 sm:w-80 whitespace-nowrap">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by guest or room..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="pl-12 pr-4 py-3 border border-gray-200 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm font-medium transition-all"
                 />
               </div>
 
@@ -804,7 +833,7 @@ export default function Bookings() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm font-medium"
                 >
                   <option value="all">All Status</option>
                   <option value="confirmed">Confirmed</option>
@@ -825,94 +854,226 @@ export default function Bookings() {
           </div>
         </div>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-600">Total Bookings</p>
-            <p className="text-2xl font-bold text-gray-900">{bookings.length}</p>
-          </div>
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-600">Active Guests</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {bookings.filter(b => b.status === STATUS.CHECKED_IN).length}
-            </p>
-          </div>
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-600">Today's Check-ins</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {(() => {
-                const today = new Date().toISOString().slice(0, 10);
-                return bookings.filter(b => b.check_in === today && b.status === STATUS.CONFIRMED).length;
-              })()}
-            </p>
-          </div>
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4">
-            <p className="text-sm text-gray-600">Available Rooms</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {rooms.filter(r => r.status === "Available").length}
-            </p>
-          </div>
-        </div>
+        {/* Bookings - Mobile Cards + Desktop Table */}
+        <div className="flex-1 min-h-0 min-w-0 bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+          {/* ===== MOBILE CARD VIEW (< md) ===== */}
+          <div className="lg:hidden overflow-auto flex-1 scroll-smooth overscroll-contain custom-scrollbar min-h-0">
+            <div className="max-w-3xl mx-auto w-full">
+            {paginatedBookings.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {paginatedBookings.map((b) => (
+                  <div
+                    key={b.id}
+                    className="p-4 hover:bg-blue-50/40 transition-all duration-200 cursor-pointer active:bg-blue-50/60"
+                    onClick={() => openDetailModal(b)}
+                  >
+                    {/* Row 1: Guest Name + Status */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-gray-900 truncate">{b.guest_name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[11px] text-gray-400 font-medium">#{b.id}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                          <span className="text-[11px] text-gray-500 font-medium">Room {b.room_no}</span>
+                        </div>
+                      </div>
+                      {editingId === b.id ? (
+                        <select
+                          autoFocus
+                          value={b.status}
+                          aria-label="Booking status"
+                          disabled={loading || !!loadingMap[b.id]}
+                          onBlur={() => setEditingId(null)}
+                          onKeyDown={(e) => { if (e.key === "Escape") setEditingId(null); }}
+                          onChange={(e) => {
+                            const newStatus = e.target.value;
+                            if (newStatus !== b.status) {
+                              if (window.confirm(getConfirmationMessage(newStatus))) {
+                                handleStatusChange(b, newStatus);
+                              } else {
+                                setEditingId(null);
+                              }
+                            } else {
+                              setEditingId(null);
+                            }
+                          }}
+                          className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm shrink-0"
+                        >
+                          {getAllowedStatuses(b.status).map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!loadingMap[b.id] && !loading && b.status !== STATUS.CHECKED_OUT && b.status !== STATUS.CANCELLED) {
+                              setEditingId(b.id);
+                            }
+                          }}
+                          disabled={loading || !!loadingMap[b.id]}
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border transition-all ${
+                            getStatusColor(b.status)
+                          } ${
+                            loading || (b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED)
+                              ? "cursor-not-allowed opacity-80"
+                              : "cursor-pointer"
+                          }`}
+                        >
+                          {loadingMap[b.id] ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            b.status
+                          )}
+                        </button>
+                      )}
+                    </div>
 
-        {/* Bookings Table */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    {/* Row 2: Dates + Actions */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-blue-500" />
+                          <span className="font-bold tabular-nums">{b.check_in}</span>
+                        </div>
+                        <span className="text-gray-300">→</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-gray-400" />
+                          <span className="font-bold tabular-nums">{b.check_out}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditing(b);
+                            setForm({
+                              guest_name: b.guest_name,
+                              room_ids: b.room_ids || [],
+                              total_guest: b.total_guest,
+                              childrens: b.childrens,
+                              check_in: b.check_in,
+                              check_out: b.check_out,
+                            });
+                            setShowForm(true);
+                          }}
+                          disabled={loading || b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED}
+                          className={`p-1.5 rounded-lg transition-all border shadow-sm ${
+                            loading || b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED
+                              ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
+                              : 'bg-orange-50 text-orange-600 border-orange-100'
+                          }`}
+                          title="Edit Booking"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/bookings/${b.id}`);
+                          }}
+                          disabled={loading}
+                          className={`p-1.5 rounded-lg transition-all border shadow-sm ${
+                            loading
+                              ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
+                              : 'bg-blue-50 text-blue-600 border-blue-100'
+                          }`}
+                          title="View Full Details"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center">
+                <div className="flex flex-col items-center">
+                  <Calendar className="w-10 h-10 text-gray-100 mb-4" />
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">No bookings found</h3>
+                  {searchTerm ? (
+                    <button onClick={() => setSearchTerm("")} className="text-orange-600 text-sm font-bold hover:underline">Clear filters</button>
+                  ) : (
+                    <button
+                      onClick={() => { resetForm(); setShowForm(true); }}
+                      className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add First Booking
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            </div>
+          </div>
+
+          {/* ===== DESKTOP TABLE VIEW (md+) ===== */}
+          <div className="hidden lg:flex overflow-auto flex-1 scroll-smooth overscroll-contain custom-scrollbar min-h-0">
+            <table className="w-full table-fixed text-left border-separate border-spacing-0 min-w-[700px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
+                  <th className="w-[25%] py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                     Guest Details
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="w-[15%] py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                     Room Details
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="w-[20%] py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                     Dates
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="w-[20%] py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center border-b border-gray-100">
                     Status
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="w-[20%] py-4 px-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-50">
                 {paginatedBookings.length > 0 ? (
                   paginatedBookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="font-medium text-gray-900">{b.guest_name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Users className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm text-gray-600">{b.total_guest} guests</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Users className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm text-gray-600">{b.childrens} children</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="font-medium text-gray-900">Room {b.room_no}</p>
-                          <p className="text-sm text-gray-600">{b.room_type}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="space-y-1">
+                    <tr key={b.id} className="hover:bg-blue-50/40 transition-all duration-200 group cursor-pointer border-l-4 border-transparent hover:border-blue-600" onClick={() => openDetailModal(b)}>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1.5">
+                          <p className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors tracking-tight leading-relaxed">{b.guest_name}</p>
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm">{b.check_in}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm">{b.check_out}</span>
+                             <span className="text-xs text-gray-400 font-medium tracking-tight">#{b.id}</span>
+                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                             <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 rounded-md text-[10px] font-bold text-blue-600 uppercase tracking-tight">
+                                  <Users className="w-3 h-3" />
+                                  {b.total_guest} {b.total_guest > 1 ? 'Guests' : 'Guest'}
+                                </div>
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-indigo-50 rounded-md text-[10px] font-bold text-indigo-600 uppercase tracking-tight">
+                                  <Users className="w-3 h-3" />
+                                  {b.childrens} {b.childrens > 1 ? 'Children' : 'Child'}
+                                </div>
+                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-bold text-gray-900 tracking-tight leading-relaxed">Room {b.room_no}</p>
+                          <p className="text-xs text-gray-400 font-medium italic">{b.room_type}</p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                            <span className="text-xs font-bold tabular-nums leading-none">{b.check_in}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span className="text-xs font-bold tabular-nums leading-none">{b.check_out}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
                         {/* Badge + Dropdown Combo */}
                         {editingId === b.id ? (
                           <select
@@ -934,7 +1095,7 @@ export default function Bookings() {
                                 setEditingId(null);
                               }
                             }}
-                            className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
                           >
                             {getAllowedStatuses(b.status).map(s => (
                               <option key={s} value={s}>{s}</option>
@@ -942,37 +1103,68 @@ export default function Bookings() {
                           </select>
                         ) : (
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (!loadingMap[b.id] && !loading && b.status !== STATUS.CHECKED_OUT && b.status !== STATUS.CANCELLED) {
                                 setEditingId(b.id);
                               }
                             }}
                             disabled={loading || !!loadingMap[b.id]}
                             title={loadingMap[b.id] ? "Updating..." : (b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED) ? "Terminal status" : "Click to change status"}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border transition-all ${
                               getStatusColor(b.status)
                             } ${
                               loading || (b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED)
                                 ? "cursor-not-allowed opacity-80"
-                                : "cursor-pointer hover:opacity-80 hover:shadow-sm"
+                                : "cursor-pointer hover:shadow-md hover:scale-105 active:scale-95"
                             }`}
                           >
                             {loadingMap[b.id] ? (
-                              <><Loader2 className="w-3 h-3 animate-spin" /> Updating…</>
+                              <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
                               b.status
                             )}
                           </button>
                         )}
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          {/* Unified Detail Modal trigger */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-end gap-2.5">
                           <button
-                            onClick={() => openDetailModal(b)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditing(b);
+                              setForm({
+                                guest_name: b.guest_name,
+                                room_ids: b.room_ids || [],
+                                total_guest: b.total_guest,
+                                childrens: b.childrens,
+                                check_in: b.check_in,
+                                check_out: b.check_out,
+                              });
+                              setShowForm(true);
+                            }}
+                            disabled={loading || b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED}
+                            className={`p-2 rounded-xl transition-all border shadow-sm ${
+                              loading || b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED 
+                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' 
+                                : 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-600 hover:text-white hover:border-orange-600 hover:shadow-lg hover:shadow-orange-500/20 active:scale-90'
+                            }`}
+                            title="Edit Booking"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/bookings/${b.id}`);
+                            }}
                             disabled={loading}
-                            className={`p-2 rounded-lg transition-colors ${loading ? 'text-gray-300 cursor-not-allowed' : 'text-orange-600 hover:bg-orange-50'}`}
-                            title="View / Edit Booking"
+                            className={`p-2 rounded-xl transition-all border shadow-sm ${
+                              loading 
+                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' 
+                                : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-lg hover:shadow-blue-500/20 active:scale-90'
+                            }`}
+                            title="View Full Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -982,27 +1174,22 @@ export default function Bookings() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <Calendar className="w-12 h-12 text-gray-300 mb-4" />
-                        <p className="text-gray-500 mb-3">No bookings found</p>
-                        {searchTerm ? (
-                          <button
-                            onClick={() => setSearchTerm("")}
-                            className="text-orange-600 hover:text-orange-700 text-sm font-medium"
-                          >
-                            Clear search
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => { resetForm(); setShowForm(true); }}
-                            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
-                          >
-                            <Plus className="w-4 h-4" />
-                            Add First Booking
-                          </button>
-                        )}
-                      </div>
+                    <td colSpan="5" className="py-20 text-center">
+                        <div className="flex flex-col items-center">
+                            <Calendar className="w-10 h-10 text-gray-100 mb-4" />
+                            <h3 className="text-lg font-bold text-gray-900 mb-1">No bookings found</h3>
+                            {searchTerm ? (
+                                <button onClick={() => setSearchTerm("")} className="text-orange-600 text-sm font-bold hover:underline">Clear filters</button>
+                            ) : (
+                                <button
+                                    onClick={() => { resetForm(); setShowForm(true); }}
+                                    className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add First Booking
+                                </button>
+                            )}
+                        </div>
                     </td>
                   </tr>
                 )}
@@ -1013,90 +1200,64 @@ export default function Bookings() {
 
         {/* Pagination Controls */}
         {filteredBookings.length > 0 && (
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-600 font-medium order-2 sm:order-1">
-              Showing <span className="font-bold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, filteredBookings.length)}</span> of <span className="font-bold text-gray-900">{filteredBookings.length}</span> records
-            </p>
+          <div className="mt-auto shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-b-2xl border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+            <div className="flex items-center gap-6 order-2 sm:order-1">
+              <p className="text-xs text-gray-400 font-bold tracking-tight">
+                Showing <span className="text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-gray-900">{Math.min(currentPage * itemsPerPage, filteredBookings.length)}</span> of <span className="text-gray-900">{filteredBookings.length}</span>
+              </p>
+              
+              <div className="flex items-center gap-2 border-l border-gray-100 pl-6">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rows:</span>
+                <select 
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-transparent border-none text-xs font-bold text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500/20 py-1 cursor-pointer"
+                >
+                  {[8, 10, 50, 100].map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             <div className="flex items-center gap-1 order-1 sm:order-2">
               <button
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-                className={`p-2 rounded-lg transition-all ${currentPage === 1
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
-                  }`}
-                title="First Page"
-              >
-                <ChevronsLeft className="w-5 h-5" />
-              </button>
-
-              <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className={`p-2 rounded-lg transition-all mr-2 ${currentPage === 1
+                className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === 1
                     ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
+                    : 'text-gray-800 hover:bg-orange-50 hover:text-orange-600'
                   }`}
-                title="Previous Page"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
+                <span>Prev</span>
               </button>
 
-              <div className="flex items-center gap-1 mx-2">
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  // Show current page, one before, one after, and first/last if many pages
-                  if (
-                    totalPages <= 7 ||
-                    pageNum === 1 ||
-                    pageNum === totalPages ||
-                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${currentPage === pageNum
-                            ? 'bg-orange-500 text-white shadow-md shadow-orange-200 transform scale-105'
-                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                          }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  } else if (
-                    (pageNum === 2 && currentPage > 4) ||
-                    (pageNum === totalPages - 1 && currentPage < totalPages - 3)
-                  ) {
-                    return <span key={pageNum} className="px-1 text-gray-400">...</span>;
-                  }
-                  return null;
-                })}
+              <div className="flex gap-1 mx-2">
+                {[...Array(totalPages)].map((_, i) => (
+                    <button
+                        key={i+1}
+                        onClick={() => setCurrentPage(i+1)}
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === i+1 ? 'bg-orange-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}
+                    >
+                        {i+1}
+                    </button>
+                ))}
               </div>
 
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg transition-all ml-2 ${currentPage === totalPages
+                className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === totalPages
                     ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
+                    : 'text-gray-800 hover:bg-orange-50 hover:text-orange-600'
                   }`}
-                title="Next Page"
               >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg transition-all ${currentPage === totalPages
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
-                  }`}
-                title="Last Page"
-              >
-                <ChevronsRight className="w-5 h-5" />
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>

@@ -1,100 +1,71 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Plus, Trash2, Pencil, X, User, Search, CheckCircle, AlertCircle, Shield, Key, Mail, Phone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Trash2, Pencil, X, User, Search, CheckCircle, AlertCircle, Shield, Key, Mail, Phone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye } from "lucide-react";
 import * as userService from "../services/userServices";
 
 
 /* ================= PAGINATION COMPONENT ================= */
-function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) {
+function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange, onItemsPerPageChange }) {
   if (totalItems === 0) return null;
 
+  const options = [8, 10, 50, 100];
+
   return (
-    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-      <p className="text-sm text-gray-600 font-medium order-2 sm:order-1">
-        Showing <span className="font-bold text-gray-900">{Math.min((currentPage * itemsPerPage) + 1, totalItems)}</span> to <span className="font-bold text-gray-900">{Math.min((currentPage + 1) * itemsPerPage, totalItems)}</span> of <span className="font-bold text-gray-900">{totalItems}</span> records
-      </p>
+    <div className="mt-auto shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-b-2xl border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+      <div className="flex items-center gap-6 order-2 sm:order-1">
+        <p className="text-xs text-gray-400 font-bold tracking-tight">
+          Showing <span className="text-gray-900">{Math.min((currentPage * itemsPerPage) + 1, totalItems)}</span> - <span className="text-gray-900">{Math.min((currentPage + 1) * itemsPerPage, totalItems)}</span> of <span className="text-gray-900">{totalItems}</span>
+        </p>
+        
+        <div className="flex items-center gap-2 border-l border-gray-100 pl-6">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rows:</span>
+          <select 
+            value={itemsPerPage}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+            className="bg-transparent border-none text-xs font-bold text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500/20 py-1 cursor-pointer"
+          >
+            {options.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       
       <div className="flex items-center gap-1 order-1 sm:order-2">
         <button
-          onClick={() => onPageChange(0)}
-          disabled={currentPage === 0}
-          className={`p-2 rounded-lg transition-all ${
-            currentPage === 0 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600 active:scale-90'
-          }`}
-          title="First Page"
-        >
-          <ChevronsLeft className="w-5 h-5" />
-        </button>
-        
-        <button
           onClick={() => onPageChange(Math.max(0, currentPage - 1))}
           disabled={currentPage === 0}
-          className={`p-2 rounded-lg transition-all mr-2 ${
-            currentPage === 0 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600 active:scale-90'
-          }`}
-          title="Previous Page"
+          className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === 0
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-gray-800 hover:bg-blue-50 hover:text-blue-600'
+            }`}
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
+          <span>Prev</span>
         </button>
 
-        <div className="flex items-center gap-1 mx-2">
-          {[...Array(totalPages)].map((_, i) => {
-            if (
-              totalPages <= 7 ||
-              i === 0 ||
-              i === totalPages - 1 ||
-              (i >= currentPage - 1 && i <= currentPage + 1)
-            ) {
-              return (
-                <button
+        <div className="flex gap-1 mx-2">
+          {[...Array(totalPages)].map((_, i) => (
+              <button
                   key={i}
                   onClick={() => onPageChange(i)}
-                  className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
-                    currentPage === i
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-200 transform scale-105'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              );
-            } else if (
-              (i === 1 && currentPage > 2) ||
-              (i === totalPages - 2 && currentPage < totalPages - 3)
-            ) {
-              return <span key={i} className="px-1 text-gray-400">...</span>;
-            }
-            return null;
-          })}
+                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === i ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                  {i+1}
+              </button>
+          ))}
         </div>
 
         <button
           onClick={() => onPageChange(Math.min(totalPages - 1, currentPage + 1))}
-          disabled={currentPage === totalPages - 1}
-          className={`p-2 rounded-lg transition-all ml-2 ${
-            currentPage === totalPages - 1 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600 active:scale-90'
-          }`}
-          title="Next Page"
+          disabled={currentPage === totalPages - 1 || totalPages === 0}
+          className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === totalPages - 1 || totalPages === 0
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-gray-800 hover:bg-blue-50 hover:text-blue-600'
+            }`}
         >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={() => onPageChange(totalPages - 1)}
-          disabled={currentPage === totalPages - 1}
-          className={`p-2 rounded-lg transition-all ${
-            currentPage === totalPages - 1 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600 active:scale-90'
-          }`}
-          title="Last Page"
-        >
-          <ChevronsRight className="w-5 h-5" />
+          <span>Next</span>
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -103,50 +74,92 @@ function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageC
 
 function StaffSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-100 shadow-sm p-4 h-20 flex justify-between items-center">
-        <div className="flex gap-3">
-           <div className="w-10 h-10 rounded-lg bg-gray-100 animate-shimmer" />
-           <div className="space-y-2">
-              <div className="h-4 w-32 bg-gray-100 rounded animate-shimmer" />
-              <div className="h-2.5 w-48 bg-gray-50 rounded animate-shimmer" />
-           </div>
-        </div>
-        <div className="flex gap-3">
-           <div className="h-10 w-48 bg-gray-50 rounded-lg animate-shimmer" />
-           <div className="h-10 w-32 bg-blue-50/50 rounded-lg animate-shimmer" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white/90 rounded-xl p-4 border border-gray-100 h-20 space-y-3">
-             <div className="h-2 w-16 bg-gray-50 rounded animate-shimmer" />
-             <div className="h-6 w-12 bg-gray-100 rounded animate-shimmer" />
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="h-12 bg-gray-50/50 border-b border-gray-100 animate-shimmer" />
-        <div className="p-0">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="p-4 px-6 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex gap-3 items-center">
-                 <div className="w-10 h-10 rounded-full bg-gray-50 animate-shimmer" />
-                 <div className="space-y-2">
-                    <div className="h-4 w-40 bg-gray-100 rounded animate-shimmer" />
-                    <div className="h-2 w-24 bg-gray-50 rounded animate-shimmer" />
-                 </div>
-              </div>
-              <div className="hidden md:block space-y-2">
-                 <div className="h-3 w-32 bg-gray-50 rounded animate-shimmer" />
-                 <div className="h-2 w-24 bg-gray-50/50 rounded animate-shimmer" />
-              </div>
-              <div className="h-8 w-24 bg-gray-50 rounded-full animate-shimmer" />
-              <div className="h-8 w-16 bg-gray-50/50 rounded-lg animate-shimmer" />
+    <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Skeleton Header — matches the real "Staff Directory" header card */}
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+            <div className="flex items-center gap-4">
+               <div className="p-3 bg-blue-50/50 border border-blue-100/50 rounded-xl w-12 h-12 animate-shimmer" />
+               <div className="space-y-2.5">
+                  <div className="h-5 w-36 bg-gray-100 rounded animate-shimmer" />
+                  <div className="h-2.5 w-44 bg-gray-50 rounded animate-shimmer" />
+               </div>
             </div>
-          ))}
+            <div className="flex items-center gap-3 w-full md:w-auto">
+               <div className="h-[42px] w-full md:w-64 bg-gray-50 rounded-xl animate-shimmer" />
+               <div className="h-[42px] w-full md:w-32 bg-blue-50/50 rounded-xl animate-shimmer" />
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton Table — uses real <table> to match column widths */}
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="overflow-hidden flex-1">
+            <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+                  <th className="py-4 px-6"><div className="h-3 w-28 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6"><div className="h-3 w-36 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6"><div className="h-3 w-24 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6 text-center"><div className="h-3 w-28 bg-gray-200 rounded animate-shimmer mx-auto" /></th>
+                  <th className="py-4 px-6 text-right"><div className="h-3 w-16 bg-gray-200 rounded animate-shimmer ml-auto" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i}>
+                    {/* Staff Member */}
+                    <td className="py-3 px-6">
+                      <div className="space-y-2">
+                        <div className="h-4 w-28 bg-gray-100 rounded animate-shimmer" />
+                        <div className="h-2 w-20 bg-gray-50 rounded animate-shimmer" />
+                      </div>
+                    </td>
+                    {/* Contact Information */}
+                    <td className="py-3 px-6">
+                      <div className="space-y-2">
+                        <div className="h-3 w-36 bg-gray-50 rounded animate-shimmer" />
+                        <div className="h-2 w-28 bg-gray-50/50 rounded animate-shimmer" />
+                      </div>
+                    </td>
+                    {/* Security Role */}
+                    <td className="py-3 px-6">
+                      <div className="h-6 w-24 bg-gray-50 rounded-lg animate-shimmer" />
+                    </td>
+                    {/* Account Status */}
+                    <td className="py-3 px-6 text-center">
+                      <div className="h-6 w-20 bg-gray-50 rounded-lg animate-shimmer mx-auto" />
+                    </td>
+                    {/* Actions */}
+                    <td className="py-3 px-6">
+                      <div className="flex items-center justify-end gap-2.5">
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Skeleton Pagination */}
+          <div className="mt-auto shrink-0 flex items-center justify-between bg-white/50 p-4 border-t border-gray-100 h-[68px]">
+            <div className="flex items-center gap-6">
+               <div className="h-3 w-32 bg-gray-100 rounded animate-shimmer" />
+               <div className="h-6 w-24 bg-gray-50 rounded animate-shimmer hidden sm:block" />
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+               <div className="flex gap-1">
+                  <div className="h-7 w-7 bg-gray-100 rounded-lg animate-shimmer" />
+                  <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+                  <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+               </div>
+               <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -162,9 +175,10 @@ export default function Staff() {
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
 
-  // Pagination state – 10 items per page
+  const navigate = useNavigate();
+  // Pagination state – 8 items per page default
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [form, setForm] = useState({
     name: "",
     username: "",
@@ -345,27 +359,12 @@ export default function Staff() {
   };
 
   if (loading && staff.length === 0) {
-    return (
-      <div className="p-0 sm:p-2">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8 space-y-2">
-            <div className="h-8 w-48 bg-gray-200/50 rounded animate-shimmer" />
-            <div className="h-4 w-64 bg-gray-100/50 rounded animate-shimmer" />
-          </div>
-          <StaffSkeleton />
-        </div>
-      </div>
-    );
+    return <StaffSkeleton />;
   }
 
   return (
-    <div className="p-0 sm:p-2">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Staff Management</h1>
-          <p className="text-gray-600 mt-1">Manage all staff accounts and permissions</p>
-        </div>
+    <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
 
         {/* Error Display */}
         {error && (
@@ -379,32 +378,32 @@ export default function Staff() {
         )}
 
         {/* Header with Actions */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <User className="w-5 h-5 text-blue-500" />
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-6 items-center md:justify-start lg:justify-between lg:gap-6 md:gap-12">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                <User className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Staff Accounts</h2>
-                <p className="text-sm text-gray-600">Manage user access and permissions</p>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Staff Directory</h2>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Manage system access</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search staff..."
+                  placeholder="Search staff members..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all"
                 />
               </div>
               <button
                 onClick={openAdd}
-                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add Staff
@@ -413,152 +412,185 @@ export default function Staff() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-600">Total Staff</p>
-            <p className="text-2xl font-bold text-gray-900">{staff.length}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-600">Active</p>
-            <p className="text-2xl font-bold text-green-600">
-              {staff.filter(s => s.is_active).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-600">Admins</p>
-            <p className="text-2xl font-bold text-red-600">
-              {staff.filter(s => s.role === "Admin").length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <p className="text-sm text-gray-600">Reception</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {staff.filter(s => s.role === "Reception").length}
-            </p>
-          </div>
-        </div>
 
         {/* Staff Table */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Staff Member</th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Contact</th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Role</th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Status</th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Actions</th>
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* ===== MOBILE CARD VIEW (< lg) ===== */}
+          <div className="lg:hidden overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
+            <div className="max-w-3xl mx-auto w-full">
+            {paginatedStaff.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {paginatedStaff.map((staffMember) => (
+                  <div key={staffMember.id} className="p-4 hover:bg-blue-50/40 transition-all duration-200 cursor-pointer">
+                    {/* Row 1: Name + Role + Status */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-gray-900 truncate">{staffMember.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Key className="w-3 h-3 text-gray-400" />
+                          <span className="text-[11px] text-gray-400 font-medium">{staffMember.username}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${getRoleColor(staffMember.role)}`}>
+                          {getRoleIcon(staffMember.role)}
+                          {staffMember.role}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${
+                          staffMember.is_active 
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-200" 
+                            : "bg-rose-100 text-rose-800 border-rose-200"
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${staffMember.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          {staffMember.is_active ? "Active" : "Locked"}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Row 2: Contact + Actions */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-col gap-0.5 text-xs text-gray-500 min-w-0">
+                        {staffMember.email && (
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Mail className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span className="font-medium truncate">{staffMember.email}</span>
+                          </div>
+                        )}
+                        {staffMember.phone && (
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="w-3 h-3 text-gray-300 shrink-0" />
+                            <span className="font-bold tabular-nums">{staffMember.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => openEdit(staffMember)}
+                          className="p-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg transition-all shadow-sm" title="Edit Staff">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => navigate(`/staff/${staffMember.id}`)}
+                          className="p-1.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg transition-all shadow-sm" title="View Staff">
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(staffMember.id)}
+                          className="p-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg transition-all shadow-sm" title="Delete Staff">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-gray-500 font-medium">No staff members found</div>
+            )}
+            </div>
+          </div>
+
+          {/* ===== DESKTOP TABLE VIEW (lg+) ===== */}
+          <div className="hidden lg:block overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
+            <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+                  <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Staff Member</th>
+                  <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Contact Information</th>
+                  <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Security Role</th>
+                  <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Account Status</th>
+                  <th className="py-4 px-6 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-50">
                 {paginatedStaff.length > 0 ? (
                   paginatedStaff.map((staffMember) => (
-                    <tr key={staffMember.id} className="hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                            <User className="w-5 h-5 text-blue-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{staffMember.name}</p>
-                            <div className="flex items-center gap-2">
-                              <Key className="w-3 h-3 text-gray-400" />
-                              <span className="text-sm text-gray-500 font-mono">{staffMember.username}</span>
-                            </div>
+                    <tr key={staffMember.id} className="hover:bg-blue-50/40 transition-all duration-200 group cursor-pointer border-l-4 border-transparent hover:border-blue-600">
+                      <td className="py-3 px-6">
+                        <div className="flex flex-col gap-1.5">
+                          <p className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors tracking-tight leading-relaxed">{staffMember.name}</p>
+                          <div className="flex items-center gap-2">
+                            <Key className="w-3 h-3 text-gray-400" />
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{staffMember.username}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="space-y-1">
+                      <td className="py-3 px-6">
+                        <div className="flex flex-col gap-1.5">
                           {staffMember.email && (
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              <span className="text-sm text-gray-600">{staffMember.email}</span>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Mail className="w-3.5 h-3.5 text-blue-500" />
+                              <span className="text-xs font-bold tracking-tight">{staffMember.email}</span>
                             </div>
                           )}
                           {staffMember.phone && (
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-3 h-3 text-gray-400" />
-                              <span className="text-sm text-gray-600">{staffMember.phone}</span>
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <Phone className="w-3.5 h-3.5" />
+                              <span className="text-xs font-bold tabular-nums">{staffMember.phone}</span>
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-lg ${getRoleColor(staffMember.role).split(' ')[0]}`}>
-                            <div className={getRoleColor(staffMember.role).split(' ')[1]}>
-                              {getRoleIcon(staffMember.role)}
-                            </div>
-                          </div>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getRoleColor(staffMember.role)}`}>
-                            {staffMember.role}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                          staffMember.is_active 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-red-100 text-red-800"
-                        }`}>
-                          <div className={`w-2 h-2 rounded-full ${staffMember.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
-                          {staffMember.is_active ? "Active" : "Inactive"}
+                      <td className="py-3 px-6">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border transition-all ${getRoleColor(staffMember.role)}`}>
+                          {getRoleIcon(staffMember.role)}
+                          {staffMember.role}
                         </span>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openEdit(staffMember)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(staffMember.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                      <td className="py-3 px-6 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border transition-all ${
+                          staffMember.is_active 
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-200" 
+                            : "bg-rose-100 text-rose-800 border-rose-200"
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${staffMember.is_active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
+                          {staffMember.is_active ? "Active" : "Locked"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-6">
+                          <div className="flex items-center justify-end gap-2.5">
+                            <button
+                              onClick={() => openEdit(staffMember)}
+                              className="p-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
+                              title="Edit Staff"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => navigate(`/staff/${staffMember.id}`)}
+                              className="p-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-90"
+                              title="View Staff"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(staffMember.id)}
+                              className="p-2 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-90"
+                              title="Delete Staff"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <User className="w-12 h-12 text-gray-300 mb-4" />
-                        <p className="text-gray-500">No staff members found</p>
-                        {searchTerm && (
-                          <button
-                            onClick={() => setSearchTerm("")}
-                            className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Clear search
-                          </button>
-                        )}
-                      </div>
+                    <td colSpan="5" className="py-12 text-center text-gray-500 font-medium">
+                      No staff members found
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          <div className="shrink-0 border-t border-gray-100">
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredStaff.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+            />
+          </div>
         </div>
-
-        {/* Pagination Controls */}
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredStaff.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-        />
 
         {/* Staff Form Modal */}
         {showForm && (

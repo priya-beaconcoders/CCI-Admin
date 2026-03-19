@@ -385,8 +385,8 @@ export default function Reports() {
   }
 
   return (
-    <div className="p-0 sm:p-2">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-1">
+      <div className="w-full pb-8">
         {/* Header with Export/Refresh at TOP-RIGHT CORNER */}
         <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex-1">

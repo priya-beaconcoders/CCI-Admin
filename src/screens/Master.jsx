@@ -1,6 +1,6 @@
-
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Trash2, Pencil, X, Users, Home, User, Mail, Phone, CheckCircle, AlertCircle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Trash2, Pencil, X, Users, Home, User, Mail, Phone, CheckCircle, AlertCircle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye } from "lucide-react";
 
 // Import services
 import * as roomService from "../services/roomServices";
@@ -12,14 +12,8 @@ export default function Masters() {
   const [error, setError] = useState("");
 
   return (
-    <div className="p-0 sm:p-2">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Master Data Management</h1>
-          <p className="text-gray-600 mt-1">Manage rooms and members</p>
-        </div>
-
+    <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 space-y-4">
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
@@ -31,31 +25,29 @@ export default function Masters() {
           </div>
         )}
 
-        {/* ===== Tabs ===== */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-2 mb-6 inline-flex">
-          <Tab 
-            label="Rooms" 
-            icon={<Home className="w-4 h-4" />}
-            active={activeTab === "rooms"} 
-            onClick={() => setActiveTab("rooms")} 
+        {activeTab === "rooms" && (
+          <RoomsMaster 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            setError={setError} 
+            setLoading={setLoading} 
           />
-          <Tab 
-            label="Members" 
-            icon={<Users className="w-4 h-4" />}
-            active={activeTab === "members"} 
-            onClick={() => setActiveTab("members")} 
+        )}
+        {activeTab === "members" && (
+          <MembersMaster 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            setError={setError} 
+            setLoading={setLoading} 
           />
-        </div>
-
-        {activeTab === "rooms" && <RoomsMaster setError={setError} setLoading={setLoading} />}
-        {activeTab === "members" && <MembersMaster setError={setError} setLoading={setLoading} />}
+        )}
 
         {/* Loading Overlay */}
         {loading && (
           <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 flex items-center gap-3">
+            <div className="bg-white rounded-xl p-6 flex items-center gap-3 shadow-2xl">
               <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-gray-700">Processing...</span>
+              <span className="text-gray-700 font-bold">Processing...</span>
             </div>
           </div>
         )}
@@ -64,80 +56,128 @@ export default function Masters() {
   );
 }
 
-/* ================= TAB ================= */
-function Tab({ label, icon, active, onClick }) {
+/* ================= SHARED HEADER ================= */
+function SharedMasterHeader({ activeTab, setActiveTab, searchTerm, setSearchTerm, onAdd, addLabel, themeColor, icons }) {
+  const isOrange = themeColor === 'orange';
+  const themeHex = isOrange ? 'orange-500' : 'green-600';
+  const ringHex = isOrange ? 'orange-500/20' : 'green-500/20';
+  const borderFocus = isOrange ? 'border-orange-500' : 'border-green-500';
+
   return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${
-        active 
-          ? "bg-orange-500 text-white shadow-sm" 
-          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+    <div className="flex flex-col md:flex-row lg:flex-row justify-between items-center md:justify-start lg:justify-between gap-4 md:gap-8 lg:gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/20 shadow-sm mb-4">
+      <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+        {/* Tabs inside the card */}
+        <div className="bg-gray-100/50 p-1 rounded-xl inline-flex w-full md:w-auto">
+          <button
+            onClick={() => setActiveTab("rooms")}
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+              activeTab === "rooms" 
+                ? "bg-white text-orange-600 shadow-sm" 
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <Home className="w-3.5 h-3.5" />
+            Rooms
+          </button>
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+              activeTab === "members" 
+                ? "bg-white text-green-600 shadow-sm" 
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            Members
+          </button>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative w-full md:w-80 group">
+          <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-colors group-focus-within:text-${themeHex}`} />
+          <input 
+            type="text" 
+            placeholder={`Search ${activeTab}...`} 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)}
+            className={`w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-${ringHex} focus:${borderFocus} outline-none transition-all placeholder:text-gray-400 font-medium`}
+          />
+        </div>
+      </div>
+
+      <button 
+        onClick={onAdd} 
+        className={`w-full lg:w-auto px-6 py-2.5 bg-${isOrange ? 'orange-500' : 'green-600'} text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-${isOrange ? 'orange-100' : 'green-100'} hover:scale-[1.02] transition-all active:scale-95`}
+      >
+        <Plus className="w-5 h-5" />
+        {addLabel}
+      </button>
+    </div>
   );
 }
 
 /* ================= PAGINATION COMPONENT ================= */
-function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) {
+function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange, onItemsPerPageChange }) {
   if (!totalItems || totalItems === 0) return null;
 
+  const options = [8, 10, 50, 100];
+
   return (
-    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-      <p className="text-sm text-gray-600 font-medium order-2 sm:order-1">
-        Showing <span className="font-bold text-gray-900">{Math.min((currentPage * itemsPerPage) + 1, totalItems)}</span> to <span className="font-bold text-gray-900">{Math.min((currentPage + 1) * itemsPerPage, totalItems)}</span> of <span className="font-bold text-gray-900">{totalItems}</span> records
-      </p>
+    <div className="mt-auto shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-b-2xl border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+      <div className="flex items-center gap-6 order-2 sm:order-1">
+        <p className="text-xs text-gray-400 font-bold tracking-tight">
+          Showing <span className="text-gray-900">{Math.min((currentPage * itemsPerPage) + 1, totalItems)}</span> - <span className="text-gray-900">{Math.min((currentPage + 1) * itemsPerPage, totalItems)}</span> of <span className="text-gray-900">{totalItems}</span>
+        </p>
+        
+        <div className="flex items-center gap-2 border-l border-gray-100 pl-6">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rows:</span>
+          <select 
+            value={itemsPerPage}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+            className="bg-transparent border-none text-xs font-bold text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500/20 py-1 cursor-pointer"
+          >
+            {options.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       
       <div className="flex items-center gap-1 order-1 sm:order-2">
         <button
-          onClick={() => onPageChange(0)}
-          disabled={currentPage === 0}
-          className={`p-2 rounded-lg transition-all ${
-            currentPage === 0 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
-          }`}
-        >
-          <ChevronsLeft className="w-5 h-5" />
-        </button>
-        
-        <button
           onClick={() => onPageChange(Math.max(0, currentPage - 1))}
           disabled={currentPage === 0}
-          className={`p-2 rounded-lg transition-all mr-2 ${
-            currentPage === 0 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
-          }`}
+          className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === 0
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-gray-800 hover:bg-orange-50 hover:text-orange-600'
+            }`}
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
+          <span>Prev</span>
         </button>
+
+        <div className="flex gap-1 mx-2">
+          {[...Array(totalPages)].map((_, i) => (
+              <button
+                  key={i}
+                  onClick={() => onPageChange(i)}
+                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === i ? 'bg-orange-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                  {i+1}
+              </button>
+          ))}
+        </div>
 
         <button
           onClick={() => onPageChange(Math.min(totalPages - 1, currentPage + 1))}
-          disabled={currentPage >= totalPages - 1}
-          className={`p-2 rounded-lg transition-all ml-2 ${
-            currentPage >= totalPages - 1 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
-          }`}
+          disabled={currentPage === totalPages - 1 || totalPages === 0}
+          className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === totalPages - 1 || totalPages === 0
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-gray-800 hover:bg-orange-50 hover:text-orange-600'
+            }`}
         >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={() => onPageChange(totalPages - 1)}
-          disabled={currentPage >= totalPages - 1}
-          className={`p-2 rounded-lg transition-all ${
-            currentPage >= totalPages - 1 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600 active:scale-90'
-          }`}
-        >
-          <ChevronsRight className="w-5 h-5" />
+          <span>Next</span>
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -145,7 +185,7 @@ function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageC
 }
 
 /* ================= ROOMS MASTER ================= */
-function RoomsMaster({ setError, setLoading }) {
+function RoomsMaster({ setError, setLoading, activeTab, setActiveTab }) {
   const [rooms, setRooms] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -162,8 +202,9 @@ function RoomsMaster({ setError, setLoading }) {
     price_8day: ""
   });
 
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const roomTypes = ["Single Suite", "Double Suite"];
   const roomStatuses = ["Available", "Booked", "Maintenance", "Cleaning"];
@@ -204,7 +245,7 @@ function RoomsMaster({ setError, setLoading }) {
 
   const paginatedRooms = useMemo(() => {
     return filteredRooms.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-  }, [filteredRooms, currentPage]);
+  }, [filteredRooms, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredRooms.length / itemsPerPage) || 1;
 
@@ -254,25 +295,12 @@ function RoomsMaster({ setError, setLoading }) {
       await fetchRooms();
     } catch (err) {
       console.error("❌ DELETE ERROR FULL OBJECT:", err);
-      console.error("❌ DELETE ERROR RESPONSE:", err.response);
-      console.error("❌ DELETE ERROR DATA:", err.response?.data);
-      console.error("❌ DELETE STATUS:", err.response?.status);
-      
       let errorMsg = "Failed to delete room.";
-      
-      // Check for specific error messages
       if (err.response?.data?.message) {
         errorMsg = err.response.data.message;
       } else if (err.response?.data?.error) {
         errorMsg = err.response.data.error;
-      } else if (err.response?.status === 422) {
-        errorMsg = "Cannot delete room. It may be linked to existing bookings or have validation errors.";
-      } else if (err.response?.status === 403) {
-        errorMsg = "You don't have permission to delete this room.";
-      } else if (err.response?.status === 404) {
-        errorMsg = "Room not found.";
       }
-      
       setError(errorMsg);
       alert(errorMsg);
     } finally {
@@ -310,75 +338,246 @@ function RoomsMaster({ setError, setLoading }) {
 
   if (dataLoading) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm p-5 h-20 animate-shimmer opacity-50" />
-        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm h-[400px] animate-shimmer opacity-30" />
+      <div className="flex-1 flex flex-col min-h-0 space-y-4 w-full">
+        {/* Skeleton Header — matches SharedMasterHeader: tabs + search + add button */}
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/20 shadow-sm mb-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+            {/* Tab placeholders */}
+            <div className="bg-gray-100/50 p-1 rounded-xl inline-flex gap-1">
+              <div className="h-9 w-24 bg-white rounded-lg animate-shimmer shadow-sm" />
+              <div className="h-9 w-28 bg-gray-50 rounded-lg animate-shimmer" />
+            </div>
+            {/* Search placeholder */}
+            <div className="h-[42px] w-full md:w-80 bg-gray-50 rounded-xl animate-shimmer" />
+          </div>
+          {/* Add button placeholder */}
+          <div className="h-[42px] w-full lg:w-32 bg-orange-100/50 rounded-xl animate-shimmer" />
+        </div>
+
+        {/* Skeleton Table — uses real <table> to match 4-column Rooms layout */}
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md min-h-0 flex-1 flex flex-col overflow-hidden">
+          <div className="overflow-hidden flex-1">
+            <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+                  <th className="py-4 px-6"><div className="h-3 w-32 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6"><div className="h-3 w-28 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6 text-center"><div className="h-3 w-16 bg-gray-200 rounded animate-shimmer mx-auto" /></th>
+                  <th className="py-4 px-6 text-right"><div className="h-3 w-16 bg-gray-200 rounded animate-shimmer ml-auto" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[...Array(8)].map((_, i) => (
+                  <tr key={i}>
+                    {/* Room Information */}
+                    <td className="py-3 px-6">
+                      <div className="space-y-2">
+                        <div className="h-4 w-24 bg-gray-100 rounded animate-shimmer" />
+                        <div className="h-2 w-40 bg-gray-50 rounded animate-shimmer" />
+                      </div>
+                    </td>
+                    {/* Pricing Structure */}
+                    <td className="py-3 px-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-10 bg-gray-50/50 rounded animate-shimmer" />
+                          <div className="h-3 w-16 bg-gray-100 rounded animate-shimmer" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-10 bg-gray-50/50 rounded animate-shimmer" />
+                          <div className="h-3 w-16 bg-gray-100 rounded animate-shimmer" />
+                        </div>
+                      </div>
+                    </td>
+                    {/* Status */}
+                    <td className="py-3 px-6 text-center">
+                      <div className="h-6 w-20 bg-gray-50 rounded-lg animate-shimmer mx-auto" />
+                    </td>
+                    {/* Actions */}
+                    <td className="py-3 px-6">
+                      <div className="flex justify-end gap-2.5">
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Skeleton Pagination */}
+          <div className="mt-auto shrink-0 flex items-center justify-between bg-white/50 p-4 border-t border-gray-100 h-[68px]">
+            <div className="flex items-center gap-6">
+               <div className="h-3 w-32 bg-gray-100 rounded animate-shimmer" />
+               <div className="h-6 w-24 bg-gray-50 rounded animate-shimmer hidden sm:block" />
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+               <div className="flex gap-1">
+                  <div className="h-7 w-7 bg-gray-100 rounded-lg animate-shimmer" />
+                  <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+                  <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+               </div>
+               <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-orange-50 rounded-lg"><Home className="w-5 h-5 text-orange-500" /></div>
-          <div>
-            <h2 className="text-lg font-bold">Room Management</h2>
-            <p className="text-sm text-gray-600">Total: {rooms.length} rooms</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" placeholder="Search..." value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-            />
-          </div>
-          <button onClick={() => { resetForm(); setShowForm(true); }} className="px-4 py-2 bg-orange-500 text-white rounded-lg flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add Room
-          </button>
-        </div>
-      </div>
+    <div className="flex-1 flex flex-col min-h-0 space-y-4 w-full">
+      <SharedMasterHeader 
+        activeTab="rooms" 
+        setActiveTab={setActiveTab} 
+        searchTerm={searchTerm} 
+        setSearchTerm={setSearchTerm} 
+        onAdd={() => { resetForm(); setShowForm(true); }} 
+        addLabel="Add Room" 
+        themeColor="orange" 
+      />
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="p-4 font-semibold text-sm">Room No</th>
-                <th className="p-4 font-semibold text-sm">Type</th>
-                <th className="p-4 font-semibold text-sm">Status</th>
-                <th className="p-4 font-semibold text-sm">Action</th>
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-md min-h-0 flex-1 flex flex-col overflow-hidden">
+        {/* ===== MOBILE CARD VIEW (< lg) ===== */}
+        <div className="lg:hidden overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
+          <div className="max-w-3xl mx-auto w-full">
+          {paginatedRooms.length > 0 ? (
+            <div className="divide-y divide-gray-100">
+              {paginatedRooms.map(room => (
+                <div key={room.id} className="p-4 hover:bg-orange-50/40 transition-all duration-200 cursor-pointer">
+                  {/* Row 1: Room Info + Status */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-gray-900">Room {room.room_no}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[11px] text-gray-400 font-medium italic">{room.type}</span>
+                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                        <span className="text-[11px] text-gray-400 font-medium">Limit: {room.guest_limit}</span>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${
+                      room.status === 'Available' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-blue-100 text-blue-700 border-blue-200'
+                    }`}>{room.status}</span>
+                  </div>
+                  {/* Row 2: Pricing + Actions */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span className="font-bold tabular-nums">3D: ₹{room.price_3day}</span>
+                      <span className="text-gray-300">•</span>
+                      <span className="font-bold tabular-nums">7D: ₹{room.price_7day}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(room); }}
+                        className="p-1.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-lg transition-all shadow-sm" title="Edit Room">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); navigate(`/masters/rooms/${room.id}`); }}
+                        className="p-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg transition-all shadow-sm" title="View Room">
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(room.id); }}
+                        className="p-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg transition-all shadow-sm" title="Delete Room">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-gray-500 font-medium italic">No rooms found.</div>
+          )}
+          </div>
+        </div>
+
+        {/* ===== DESKTOP TABLE VIEW (lg+) ===== */}
+        <div className="hidden lg:block overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
+          <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+                <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Room Information</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Pricing Structure</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
+                <th className="py-4 px-6 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {paginatedRooms.map(room => (
-                <tr key={room.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-medium">{room.room_no}</td>
-                  <td className="p-4 text-sm">{room.type}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      room.status === 'Available' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                    }`}>{room.status}</span>
-                  </td>
-                  <td className="p-4 flex gap-2">
-                    <button onClick={() => openEdit(room)} className="p-1 text-blue-600 hover:bg-blue-50 rounded"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={() => handleDelete(room.id)} className="p-1 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4" /></button>
-                  </td>
+            <tbody className="divide-y divide-gray-50">
+              {paginatedRooms.length > 0 ? (
+                paginatedRooms.map(room => (
+                  <tr key={room.id} className="hover:bg-orange-50/40 transition-all duration-200 group cursor-pointer border-l-4 border-transparent hover:border-orange-600">
+                    <td className="py-3 px-6">
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors tracking-tight leading-relaxed">Room {room.room_no}</p>
+                        <div className="flex items-center gap-2">
+                           <span className="text-xs text-gray-400 font-medium tracking-tight italic">{room.type}</span>
+                           <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                           <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Limit: {room.guest_limit} Guests</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6">
+                       <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                             <span className="text-[10px] text-gray-400 font-bold uppercase w-12 text-gray-300">3 Day:</span>
+                             <span className="text-xs font-bold text-gray-900 tabular-nums">₹{room.price_3day}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <span className="text-[10px] text-gray-400 font-bold uppercase w-12 text-gray-300">7 Day:</span>
+                             <span className="text-xs font-bold text-gray-900 tabular-nums">₹{room.price_7day}</span>
+                          </div>
+                       </div>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${
+                        room.status === 'Available' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-blue-100 text-blue-700 border-blue-200'
+                      }`}>{room.status}</span>
+                    </td>
+                    <td className="py-3 px-6">
+                      <div className="flex justify-end gap-2.5">
+                         <button 
+                          onClick={(e) => { e.stopPropagation(); openEdit(room); }} 
+                          className="p-2 bg-orange-50 text-orange-600 border border-orange-100 rounded-xl hover:bg-orange-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="Edit Room"
+                         >
+                          <Pencil className="w-4 h-4" />
+                         </button>
+                         <button 
+                          onClick={(e) => { e.stopPropagation(); navigate(`/masters/rooms/${room.id}`); }} 
+                          className="p-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="View Room"
+                         >
+                          <Eye className="w-4 h-4" />
+                         </button>
+                         <button 
+                          onClick={(e) => { e.stopPropagation(); handleDelete(room.id); }} 
+                          className="p-2 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="Delete Room"
+                         >
+                          <Trash2 className="w-4 h-4" />
+                         </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                   <td colSpan="4" className="py-12 text-center text-gray-500 font-medium italic">No rooms found.</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        <div className="shrink-0 border-t border-gray-100">
+          <Pagination 
+            currentPage={currentPage} totalPages={totalPages} 
+            totalItems={filteredRooms.length} itemsPerPage={itemsPerPage} 
+            onPageChange={setCurrentPage} 
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
       </div>
-
-      <Pagination 
-        currentPage={currentPage} totalPages={totalPages} 
-        totalItems={filteredRooms.length} itemsPerPage={itemsPerPage} 
-        onPageChange={setCurrentPage} 
-      />
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -437,7 +636,7 @@ function RoomsMaster({ setError, setLoading }) {
 }
 
 /* ================= MEMBERS MASTER ================= */
-function MembersMaster({ setError, setLoading }) {
+function MembersMaster({ setError, setLoading, activeTab, setActiveTab }) {
   const [members, setMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -454,7 +653,8 @@ function MembersMaster({ setError, setLoading }) {
   });
 
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const navigate = useNavigate();
 
   const fetchMembers = async () => {
     try {
@@ -487,7 +687,7 @@ function MembersMaster({ setError, setLoading }) {
 
   const paginatedMembers = useMemo(() => {
     return filteredMembers.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-  }, [filteredMembers, currentPage]);
+  }, [filteredMembers, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredMembers.length / itemsPerPage) || 1;
 
@@ -543,7 +743,6 @@ function MembersMaster({ setError, setLoading }) {
       let msg = "Failed to save member.";
       
       if (err.response?.data?.errors) {
-        // Collect all validation errors
         const serverErrors = {};
         Object.entries(err.response.data.errors).forEach(([key, val]) => {
           serverErrors[key] = Array.isArray(val) ? val[0] : val;
@@ -569,81 +768,246 @@ function MembersMaster({ setError, setLoading }) {
 
   if (dataLoading) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm p-5 h-20 animate-shimmer opacity-50" />
-        <div className="bg-white/90 rounded-xl border border-gray-100 shadow-sm h-[400px] animate-shimmer opacity-30" />
+      <div className="flex-1 flex flex-col min-h-0 space-y-4 w-full">
+        {/* Skeleton Header — matches SharedMasterHeader: tabs + search + add button */}
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/20 shadow-sm mb-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+            {/* Tab placeholders */}
+            <div className="bg-gray-100/50 p-1 rounded-xl inline-flex gap-1">
+              <div className="h-9 w-24 bg-gray-50 rounded-lg animate-shimmer" />
+              <div className="h-9 w-28 bg-white rounded-lg animate-shimmer shadow-sm" />
+            </div>
+            {/* Search placeholder */}
+            <div className="h-[42px] w-full md:w-80 bg-gray-50 rounded-xl animate-shimmer" />
+          </div>
+          {/* Add button placeholder */}
+          <div className="h-[42px] w-full lg:w-36 bg-green-100/50 rounded-xl animate-shimmer" />
+        </div>
+
+        {/* Skeleton Table — uses real <table> to match 4-column Members layout */}
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md min-h-0 flex-1 flex flex-col overflow-hidden">
+          <div className="overflow-hidden flex-1">
+            <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+                  <th className="py-4 px-6"><div className="h-3 w-28 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6"><div className="h-3 w-36 bg-gray-200 rounded animate-shimmer" /></th>
+                  <th className="py-4 px-6 text-center"><div className="h-3 w-16 bg-gray-200 rounded animate-shimmer mx-auto" /></th>
+                  <th className="py-4 px-6 text-right"><div className="h-3 w-16 bg-gray-200 rounded animate-shimmer ml-auto" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[...Array(8)].map((_, i) => (
+                  <tr key={i}>
+                    {/* Member Details */}
+                    <td className="py-3 px-6">
+                      <div className="space-y-2">
+                        <div className="h-4 w-28 bg-gray-100 rounded animate-shimmer" />
+                        <div className="h-2 w-36 bg-gray-50 rounded animate-shimmer" />
+                      </div>
+                    </td>
+                    {/* Contact Information */}
+                    <td className="py-3 px-6">
+                      <div className="space-y-2">
+                        <div className="h-3 w-36 bg-gray-50 rounded animate-shimmer" />
+                        <div className="h-2 w-28 bg-gray-50/50 rounded animate-shimmer" />
+                      </div>
+                    </td>
+                    {/* Status */}
+                    <td className="py-3 px-6 text-center">
+                      <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer mx-auto" />
+                    </td>
+                    {/* Actions */}
+                    <td className="py-3 px-6">
+                      <div className="flex justify-end gap-2.5">
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                        <div className="h-8 w-8 bg-gray-50/50 rounded-xl animate-shimmer" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Skeleton Pagination */}
+          <div className="mt-auto shrink-0 flex items-center justify-between bg-white/50 p-4 border-t border-gray-100 h-[68px]">
+            <div className="flex items-center gap-6">
+               <div className="h-3 w-32 bg-gray-100 rounded animate-shimmer" />
+               <div className="h-6 w-24 bg-gray-50 rounded animate-shimmer hidden sm:block" />
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+               <div className="flex gap-1">
+                  <div className="h-7 w-7 bg-gray-100 rounded-lg animate-shimmer" />
+                  <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+                  <div className="h-7 w-7 bg-gray-50 rounded-lg animate-shimmer" />
+               </div>
+               <div className="h-6 w-16 bg-gray-50 rounded-lg animate-shimmer" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-50 rounded-lg"><Users className="w-5 h-5 text-green-500" /></div>
-          <div>
-            <h2 className="text-lg font-bold">Member Management</h2>
-            <p className="text-sm text-gray-600">Total: {members.length} members</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" placeholder="Search..." value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg outline-none"
-            />
-          </div>
-          <button onClick={() => { resetForm(); setShowForm(true); }} className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add Member
-          </button>
-        </div>
-      </div>
+    <div className="flex-1 flex flex-col min-h-0 space-y-4 w-full">
+      <SharedMasterHeader 
+        activeTab="members" 
+        setActiveTab={setActiveTab} 
+        searchTerm={searchTerm} 
+        setSearchTerm={setSearchTerm} 
+        onAdd={() => { resetForm(); setShowForm(true); }} 
+        addLabel="Add Member" 
+        themeColor="green" 
+      />
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-4 font-semibold text-sm">Member Name</th>
-                <th className="p-4 font-semibold text-sm">ID No</th>
-                <th className="p-4 font-semibold text-sm">Mobile</th>
-                <th className="p-4 font-semibold text-sm">Action</th>
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-md min-h-0 flex-1 flex flex-col overflow-hidden">
+        {/* ===== MOBILE CARD VIEW (< lg) ===== */}
+        <div className="lg:hidden overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
+          <div className="max-w-3xl mx-auto w-full">
+          {paginatedMembers.length > 0 ? (
+            <div className="divide-y divide-gray-100">
+              {paginatedMembers.map(m => (
+                <div key={m.id} className="p-4 hover:bg-green-50/40 transition-all duration-200 cursor-pointer">
+                  {/* Row 1: Name + Status */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-gray-900 truncate">{m.name}</p>
+                      <span className="text-[11px] text-gray-400 font-medium">ID: {m.membership_no}</span>
+                    </div>
+                    <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${
+                      m.is_active ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'
+                    }`}>{m.is_active ? 'Active' : 'Locked'}</span>
+                  </div>
+                  {/* Row 2: Contact + Actions */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-0.5 text-xs text-gray-500 min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Mail className="w-3 h-3 text-green-500 shrink-0" />
+                        <span className="font-medium truncate">{m.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3 h-3 text-gray-300 shrink-0" />
+                        <span className="font-bold tabular-nums">{m.mobile_no}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={(e) => { 
+                        e.stopPropagation();
+                        setEditingMember(m); 
+                        setForm({ name: m.name || "", membership_no: m.membership_no || "", mobile_no: m.mobile_no || "", email: m.email || "", address: m.address || "", is_active: m.is_active === null ? true : !!m.is_active }); 
+                        setShowForm(true); 
+                      }} className="p-1.5 bg-green-50 text-green-600 border border-green-100 rounded-lg transition-all shadow-sm" title="Edit Member">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); navigate(`/masters/members/${m.id}`); }}
+                        className="p-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg transition-all shadow-sm" title="View Member">
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-gray-500 font-medium italic">No members found.</div>
+          )}
+          </div>
+        </div>
+
+        {/* ===== DESKTOP TABLE VIEW (lg+) ===== */}
+        <div className="hidden lg:block overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
+          <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50/95 backdrop-blur-sm border-b border-gray-100">
+                <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Member Details</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Contact Information</th>
+                <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Status</th>
+                <th className="py-4 px-6 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {paginatedMembers.map(m => (
-                <tr key={m.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-medium">{m.name}</td>
-                  <td className="p-4 text-sm">{m.membership_no}</td>
-                  <td className="p-4 text-sm">{m.mobile_no}</td>
-                  <td className="p-4 flex gap-2">
-                    <button onClick={() => { 
-                      setEditingMember(m);
-                      setFieldErrors({});
-                      setFormError("");
-                      setForm({
-                        name: m.name || "",
-                        membership_no: m.membership_no || "",
-                        mobile_no: m.mobile_no || "",
-                        email: m.email || "",
-                        address: m.address || "",
-                        is_active: m.is_active === null ? true : !!m.is_active
-                      }); 
-                      setShowForm(true); 
-                    }} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  </td>
+            <tbody className="divide-y divide-gray-50">
+              {paginatedMembers.length > 0 ? (
+                paginatedMembers.map(m => (
+                  <tr key={m.id} className="hover:bg-green-50/40 transition-all duration-200 group cursor-pointer border-l-4 border-transparent hover:border-green-600">
+                    <td className="py-3 px-6">
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-sm font-bold text-gray-900 group-hover:text-green-700 transition-colors tracking-tight leading-relaxed">{m.name}</p>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Member ID: {m.membership_no}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6">
+                      <div className="flex flex-col gap-1.5">
+                         <div className="flex items-center gap-2 text-gray-600">
+                            <Mail className="w-3 h-3 text-green-500" />
+                            <span className="text-xs font-bold tracking-tight">{m.email}</span>
+                         </div>
+                         <div className="flex items-center gap-2 text-gray-400">
+                            <Phone className="w-3 h-3 text-gray-300" />
+                            <span className="text-xs font-bold tabular-nums">{m.mobile_no}</span>
+                         </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${
+                        m.is_active ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'
+                      }`}>
+                        {m.is_active ? 'Active' : 'Locked'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-6">
+                      <div className="flex justify-end gap-2.5">
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation();
+                            setEditingMember(m); 
+                            setForm({
+                              name: m.name || "",
+                              membership_no: m.membership_no || "",
+                              mobile_no: m.mobile_no || "",
+                              email: m.email || "",
+                              address: m.address || "",
+                              is_active: m.is_active === null ? true : !!m.is_active
+                            }); 
+                            setShowForm(true); 
+                          }} 
+                          className="p-2 bg-green-50 text-green-600 border border-green-100 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="Edit Member"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); navigate(`/masters/members/${m.id}`); }} 
+                          className="p-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
+                          title="View Member"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                   <td colSpan="4" className="py-12 text-center text-gray-500 font-medium italic">No members found.</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+        <div className="shrink-0 border-t border-gray-100">
+          <Pagination 
+            currentPage={currentPage} totalPages={totalPages} 
+            totalItems={filteredMembers.length} itemsPerPage={itemsPerPage} 
+            onPageChange={setCurrentPage} 
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
       </div>
-
-      <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredMembers.length} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">

@@ -257,12 +257,9 @@ export default function Dashboard() {
 
   return (
     <>
-      <style>{`
-        html, body { scrollbar-gutter: stable !important; }
-      `}</style>
-      <div className="space-y-6 pb-12">
+      <div className="space-y-4 pb-2">
         {/* 1. TOP STATS ROW */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-0.5">
           <StatCard title="Check-ins Today" value={dashboardData.checkInsCount} icon={<Users className="w-5 h-5"/>} color="blue" />
           <StatCard title="Check-outs Today" value={dashboardData.checkOutsCount} icon={<LogOut className="w-5 h-5"/>} color="orange" />
           <StatCard title="Available Rooms" value={dashboardData.availableCount} icon={<Home className="w-5 h-5"/>} color="green" />
@@ -270,13 +267,13 @@ export default function Dashboard() {
         </div>
 
         {/* 2. MAIN GRID (70/30) */}
-        <div className="grid grid-cols-12 gap-6 items-stretch">
+        <div className="grid grid-cols-12 gap-4 items-stretch">
           
           {/* LEFT: OPERATIONS HUB */}
           <div className="col-span-12 lg:col-span-8 lg:relative order-2 lg:order-1">
-          <div className="flex flex-col gap-4 overflow-hidden h-[500px] lg:h-auto lg:absolute lg:inset-0">
+          <div className="flex flex-col gap-4 h-[500px] lg:h-auto lg:absolute lg:inset-0 p-0.5">
             
-            <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-md rounded-2xl p-4 flex justify-between items-center ring-1 ring-black/5">
+            <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg rounded-2xl p-4 flex justify-between items-center ring-1 ring-black/5">
               <div className="flex items-center gap-3">
                  <div className="w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center">
                     <BarChart3 className="w-4 h-4 text-blue-600" />
@@ -292,7 +289,7 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="shadow-md rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5 flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 flex flex-col overflow-hidden rounded-2xl text-gray-900">
                 <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex flex-wrap items-center gap-3">
@@ -463,10 +460,10 @@ export default function Dashboard() {
           </div>
 
           {/* RIGHT: QUICK PANEL */}
-          <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 order-1 lg:order-2">
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 order-1 lg:order-2">
             
             {/* A. SUMMARY CARD - STABILIZED */}
-            <div className="shadow-md rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
+            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
               <div className="p-5 min-w-[280px]">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate w-32">{view} Summary</h3>
@@ -508,7 +505,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="shadow-md rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
+            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
               <div className="p-5">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 tracking-tight">Quick Actions</h3>
                 <div className="flex gap-3">
@@ -528,10 +525,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="shadow-md rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
+            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
               <div className="p-5 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-gray-900 tracking-tight">Room Availability</h3>
+                   <h3 className="text-sm font-semibold text-gray-900 tracking-tight">Room Availability</h3>
                     <Bed className="w-4 h-4 text-gray-400" />
                 </div>
                 <div className="space-y-2">
@@ -563,7 +560,7 @@ function StatCard({ title, value, icon, color }) {
   };
   
   return (
-    <div className="bg-white/90 backdrop-blur-sm p-5 rounded-2xl border border-gray-100 shadow-md hover:border-blue-200 transition-all flex items-center justify-between group">
+    <div className="bg-white/90 backdrop-blur-sm p-5 rounded-2xl border border-gray-100 shadow-lg hover:border-blue-200 transition-all flex items-center justify-between group">
       <div className="space-y-0.5">
         <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">{title}</p>
         <p className="text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">{value}</p>

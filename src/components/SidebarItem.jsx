@@ -6,7 +6,6 @@ export default function SidebarItem({
   title, 
   active, 
   collapsed,
-  darkMode = false,
   onClick 
 }) {
   return (
@@ -19,9 +18,7 @@ export default function SidebarItem({
         rounded-xl
         ${active 
           ? 'text-white'
-          : darkMode
-            ? 'text-gray-400 hover:text-blue-400'
-            : 'text-gray-500 hover:text-blue-600'
+          : 'text-gray-500 hover:text-blue-600'
         }
       `}
     >

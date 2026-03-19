@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { 
   Users, Clock, Home, Hotel, Search, Plus, 
-  LogOut, RefreshCw, AlertCircle,
+  LogOut, RefreshCw, AlertCircle, Eye,
   ChevronRight, ArrowRight, Bed, BarChart3,
   Calendar, Info
 } from "lucide-react";
@@ -256,8 +256,8 @@ export default function Dashboard() {
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <>
-      <div className="space-y-4 pb-2">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-1">
+      <div className="space-y-4 pb-4">
         {/* 1. TOP STATS ROW */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-0.5">
           <StatCard title="Check-ins Today" value={dashboardData.checkInsCount} icon={<Users className="w-5 h-5"/>} color="blue" />
@@ -422,12 +422,12 @@ export default function Dashboard() {
                               <StatusBadge status={booking.status} />
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-2">
+                              <div className="flex justify-end gap-2.5">
                                 {booking.status === STATUS.PENDING && (booking.opType === 'check-in' || booking.opType === 'both') && (
                                   <button 
                                     onClick={(e) => handleAction(e, booking.id, 'checkin')}
                                     disabled={actionLoading[booking.id]}
-                                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-sm transition-all hover:scale-[1.02] disabled:opacity-50"
+                                    className="px-4 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-md transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
                                   >
                                     {actionLoading[booking.id] ? "..." : "Check-in"}
                                   </button>
@@ -436,13 +436,17 @@ export default function Dashboard() {
                                   <button 
                                     onClick={(e) => handleAction(e, booking.id, 'checkout')}
                                     disabled={actionLoading[booking.id]}
-                                    className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600 shadow-sm transition-all hover:scale-[1.02] disabled:opacity-50"
+                                    className="px-4 py-1.5 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600 shadow-md transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
                                   >
                                     {actionLoading[booking.id] ? "..." : "Check-out"}
                                   </button>
                                 )}
-                                <button className="p-1.5 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all hidden sm:block">
-                                  <ChevronRight className="w-4 h-4" />
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/bookings/${booking.id}`); }}
+                                  className="p-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm hidden sm:block active:scale-90"
+                                  title="View Details"
+                                >
+                                  <Eye className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
@@ -545,7 +549,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

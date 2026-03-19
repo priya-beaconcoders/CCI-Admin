@@ -115,8 +115,8 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-0 sm:p-2">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full overflow-y-auto custom-scrollbar pr-1">
+      <div className="w-full pb-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">System Settings</h1>
@@ -135,42 +135,42 @@ export default function Settings() {
         )}
 
         {/* Header with Actions */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <SettingsIcon className="w-5 h-5 text-purple-500" />
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-md p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-50 border border-purple-100 rounded-xl">
+                <SettingsIcon className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Configuration</h2>
-                <p className="text-sm text-gray-600">Manage system-wide settings</p>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight">System Parameters</h2>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Configure global constants</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search settings..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm font-medium transition-all"
                 />
               </div>
               <button
                 onClick={openAdd}
-                className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 bg-purple-600 text-white font-bold rounded-xl text-sm hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 active:scale-95 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add Setting
               </button>
               <button
                 onClick={fetchSettings}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
                 title="Refresh"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -178,16 +178,18 @@ export default function Settings() {
 
         {/* Common Settings Grid */}
         <div className="mb-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Common Settings</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Common Configurations</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {commonSettings.map((setting) => {
               const currentSetting = settings.find(s => s.key === setting.key);
               return (
-                <div key={setting.key} className="bg-white rounded-xl shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <SettingsIcon className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-medium text-gray-900">{setting.label}</span>
+                <div key={setting.key} className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors">
+                        <SettingsIcon className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{setting.label}</span>
                     </div>
                     <button
                       onClick={() => {
@@ -203,21 +205,21 @@ export default function Settings() {
                           setShowForm(true);
                         }
                       }}
-                      className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                      className="text-xs text-purple-600 hover:text-purple-700 font-bold uppercase tracking-wider underline decoration-purple-200 underline-offset-4 decoration-2"
                     >
-                      {currentSetting ? "Edit" : "Set"}
+                      {currentSetting ? "Update" : "Setup"}
                     </button>
                   </div>
-                  <div className="mb-2">
-                    <code className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  <div className="mb-4">
+                    <code className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100">
                       {setting.key}
                     </code>
                   </div>
-                  <div className="text-center py-3">
-                    <p className={`text-2xl font-bold ${
-                      currentSetting ? 'text-gray-900' : 'text-gray-400'
+                  <div className="text-center py-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-100">
+                    <p className={`text-2xl font-black tracking-tighter tabular-nums ${
+                      currentSetting ? 'text-gray-900' : 'text-gray-300'
                     }`}>
-                      {currentSetting ? currentSetting.value : "Not set"}
+                      {currentSetting ? currentSetting.value : "---"}
                     </p>
                   </div>
                 </div>

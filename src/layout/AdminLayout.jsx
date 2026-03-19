@@ -20,20 +20,21 @@ import logo from "../assets/logo-india.png";
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
-  // Reset collapse on mobile
+  // Close sidebar on mobile, open on desktop
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      if (window.innerWidth < 1024) {
         setCollapsed(false);
+        setSidebarOpen(false);
       } else {
         setSidebarOpen(true);
       }
     };
     window.addEventListener('resize', handleResize);
-    handleResize();
+    handleResize(); // set correct state on mount
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -51,6 +52,7 @@ export default function AdminLayout() {
   };
 
   const getPageTitle = () => {
+    if (location.pathname.startsWith('/bookings/')) return "Booking Details";
     const item = menuItems.find(item => item.path === location.pathname);
     return item ? item.title : "Dashboard";
   };
@@ -80,13 +82,13 @@ export default function AdminLayout() {
       
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
-      <aside className={`
+      <aside className={`no-print
         fixed inset-y-0 left-0 z-50
         h-[100dvh]
         transform transition-all duration-300 ease-in-out
@@ -97,7 +99,7 @@ export default function AdminLayout() {
         ${collapsed ? 'w-16' : 'w-72'}
       `}>
         {/* Logo Section */}
-        <div className={`h-16 flex items-center transition-all duration-300 bg-white ${collapsed ? 'justify-center px-2' : 'px-6 gap-3'}`}>
+        <div className={`h-16 flex items-center transition-all duration-300 bg-white border-b border-gray-100 ${collapsed ? 'justify-center px-2' : 'px-5 gap-3'}`}>
           <div className="relative flex-shrink-0">
             <img src={logo} alt="CCI" className="h-9 w-9 object-contain"
               style={{ filter: 'brightness(1.05) contrast(1.05)' }}
@@ -113,7 +115,7 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto hidden md:flex p-1.5 rounded-lg transition-colors text-gray-400 hover:text-blue-600"
+            className="ml-auto hidden lg:flex p-1.5 rounded-lg transition-colors text-gray-400 hover:text-blue-600"
           >
             <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
           </button>
@@ -161,7 +163,7 @@ export default function AdminLayout() {
         </nav>
 
         {/* Footer - Simplified to Sign Out Only */}
-          <div className={`p-4 pb-12 md:pb-8 border-t border-gray-200 ${collapsed ? 'flex flex-col items-center gap-4' : ''}`}>
+          <div className={`p-3 pb-12 lg:pb-8 border-t border-gray-200 ${collapsed ? 'flex flex-col items-center gap-4' : ''}`}>
           <button
             onClick={handleLogout}
             className={`flex items-center transition-all duration-300 group rounded-xl
@@ -178,14 +180,14 @@ export default function AdminLayout() {
 
       {/* Main Container Optimized */}
       <div className={`
-        flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out
-        will-change-[margin]
-        ${collapsed ? 'md:ml-16' : 'md:ml-72'}
+        flex-1 flex flex-col min-w-0 transition-[margin-left] duration-300 ease-in-out
+        ${collapsed ? 'lg:ml-16' : 'lg:ml-72'}
+        h-full
       `}>
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200/50">
-          <div className="h-16 px-6 flex items-center justify-between">
+        <header className="no-print sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200/50 flex-shrink-0">
+          <div className="h-16 px-4 md:px-6 lg:px-8 max-w-[1440px] 2xl:max-w-[1600px] mx-auto w-full flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 rounded-xl transition-colors">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-xl transition-colors">
                 <Menu className="w-5 h-5 text-gray-600 hover:text-gray-900" />
               </button>
               <div className="flex items-center gap-3">
@@ -218,17 +220,19 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto pt-3 px-4 pb-2 md:pt-4 md:px-8 lg:px-10">
-            <Outlet />
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col custom-scrollbar">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-4 px-4 pb-4 md:px-6 lg:px-6 scrollbar-thin">
+            <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto w-full flex-1 flex flex-col min-h-0 animate-in fade-in duration-500">
+              <Outlet />
+            </div>
           </div>
 
           {/* Footer - Compact */}
-          <footer className="relative border-t shrink-0 border-gray-200 bg-white/80 backdrop-blur-xl">
-            <div className="px-6 py-2.5 flex flex-col md:flex-row justify-between items-center gap-2">
-              <div className="flex items-center gap-2 text-[10px] md:text-xs">
+          <footer className="no-print relative border-t shrink-0 border-gray-200 bg-white/80 backdrop-blur-xl">
+            <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
+              <div className="flex items-center gap-2 text-[11px] md:text-xs">
                 <span className="text-gray-400">© {new Date().getFullYear()}</span>
-                <span className="font-medium text-gray-600">Constitution Club of India</span>
+                <span className="font-medium text-gray-700">Constitution Club of India</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 text-xs">

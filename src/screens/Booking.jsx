@@ -873,7 +873,7 @@ export default function Bookings() {
         </div>
 
         {/* Bookings - Mobile Cards + Desktop Table */}
-        <ContentCard>
+        <ContentCard className="flex-1">
           {/* ===== MOBILE CARD VIEW (< lg) ===== */}
           <div className="lg:hidden overflow-auto flex-1 scroll-smooth overscroll-contain custom-scrollbar min-h-0">
             <div className="max-w-3xl mx-auto w-full">

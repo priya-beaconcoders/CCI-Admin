@@ -11,7 +11,7 @@ function StaffSkeleton() {
   return (
     <PageLayout>
       <HeaderSkeleton />
-      <ContentCard>
+      <ContentCard className="flex-1">
         <div className="lg:hidden flex-1 overflow-auto p-4 space-y-2">
           {[...Array(6)].map((_, i) => (
             <MobileCardSkeleton key={i} />
@@ -285,7 +285,7 @@ export default function Staff() {
       </div>
 
       {/* Staff Content Area */}
-      <ContentCard>
+      <ContentCard className="flex-1">
         {/* ===== MOBILE CARD VIEW (< lg) ===== */}
         <div className="lg:hidden overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
           {paginatedStaff.length > 0 ? (

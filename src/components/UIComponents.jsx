@@ -11,12 +11,12 @@ export const PageLayout = ({ children, className = "" }) => (
   <div
     className={`
       flex-1 w-full flex flex-col min-h-0 lg:overflow-hidden
-      px-4 py-3 sm:px-6 sm:py-4
-      pb-[calc(16px+env(safe-area-inset-bottom))]
+      px-2 py-3 lg:px-3
+      pb-[calc(28px+env(safe-area-inset-bottom))]
       ${className}
     `}
   >
-    <div className="flex-1 flex flex-col min-h-0 lg:overflow-hidden space-y-3">
+    <div className="flex-1 flex flex-col min-h-0 lg:overflow-visible space-y-4 bg-gray-50">
       {children}
     </div>
   </div>
@@ -68,7 +68,7 @@ export const EmptyState = ({ icon: Icon, title, message, actionText, onAction })
 
 /* ================= CONTENT CARD ================= */
 export const ContentCard = ({ children, className = "" }) => (
-  <div className={`bg-white border border-gray-100 rounded-2xl shadow-md flex-1 flex flex-col min-h-0 overflow-hidden ${className}`}>
+  <div className={`bg-white border border-gray-200 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex flex-col min-h-0 overflow-hidden ${className}`}>
     {children}
   </div>
 );

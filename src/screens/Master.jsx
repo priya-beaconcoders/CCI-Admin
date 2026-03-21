@@ -272,7 +272,7 @@ function RoomsMaster({ setError, setLoading, setActiveTab }) {
       {dataLoading ? (
         <>
           <HeaderSkeleton />
-          <ContentCard>
+          <ContentCard className="flex-1">
             <div className="lg:hidden flex-1 overflow-auto p-4 space-y-2">
               {[...Array(6)].map((_, i) => (
                 <MobileCardSkeleton key={i} />
@@ -314,7 +314,7 @@ function RoomsMaster({ setError, setLoading, setActiveTab }) {
             themeColor="orange" 
           />
 
-          <ContentCard>
+          <ContentCard className="flex-1">
             {/* MOBILE CARD VIEW (< lg) */}
             <div className="lg:hidden overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
               {paginatedRooms.length > 0 ? (
@@ -339,6 +339,8 @@ function RoomsMaster({ setError, setLoading, setActiveTab }) {
                           <span className="font-bold tabular-nums truncate">3D: ₹{room.price_3day}</span>
                           <span className="text-gray-300 shrink-0">•</span>
                           <span className="font-bold tabular-nums truncate">7D: ₹{room.price_7day}</span>
+                          <span className="text-gray-300 shrink-0">•</span>
+                          <span className="font-bold tabular-nums truncate">8D+: ₹{room.price_8day}</span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <ActionIcon onClick={(e) => { e.stopPropagation(); openEdit(room); }} title="Edit Room" ringColor="orange-500" className="bg-orange-50 text-orange-600 border border-orange-100">
@@ -375,7 +377,7 @@ function RoomsMaster({ setError, setLoading, setActiveTab }) {
                     {paginatedRooms.length > 0 ? (
                       paginatedRooms.map(room => (
                         <tr key={room.id} className="hover:bg-orange-50/40 transition-all duration-200 group cursor-pointer border-l-4 border-transparent hover:border-orange-600">
-                          <td className="py-3 px-6">
+                          <td className="py-4 px-6">
                             <div className="flex flex-col gap-1.5 min-w-0">
                               <p className="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors tracking-tight leading-relaxed truncate">Room {room.room_no}</p>
                               <div className="flex items-center gap-2 min-w-0">
@@ -385,24 +387,30 @@ function RoomsMaster({ setError, setLoading, setActiveTab }) {
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-6 text-sm font-medium">
-                             <div className="flex flex-col gap-1.5 min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                   <span className="text-[10px] text-gray-300 font-bold uppercase w-12 shrink-0">3 Day:</span>
-                                   <span className="font-bold text-gray-900 tabular-nums truncate">₹{room.price_3day}</span>
+                          <td className="py-4 px-6 text-sm">
+                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
+                                <div className="flex items-baseline gap-1.5">
+                                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">3 Day:</span>
+                                   <span className="font-bold text-gray-900 tabular-nums">₹{room.price_3day}</span>
                                 </div>
-                                <div className="flex items-center gap-2 min-w-0">
-                                   <span className="text-[10px] text-gray-300 font-bold uppercase w-12 shrink-0">7 Day:</span>
-                                   <span className="font-bold text-gray-900 tabular-nums truncate">₹{room.price_7day}</span>
+                                <span className="text-gray-300 shrink-0 text-xs hidden xl:block">•</span>
+                                <div className="flex items-baseline gap-1.5">
+                                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">7 Day:</span>
+                                   <span className="font-bold text-gray-900 tabular-nums">₹{room.price_7day}</span>
+                                </div>
+                                <span className="text-gray-300 shrink-0 text-xs hidden xl:block">•</span>
+                                <div className="flex items-baseline gap-1.5">
+                                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">8+ Day:</span>
+                                   <span className="font-bold text-gray-900 tabular-nums">₹{room.price_8day}</span>
                                 </div>
                              </div>
                           </td>
-                          <td className="py-3 px-6 text-center">
+                          <td className="py-4 px-6 text-center">
                             <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${
                               room.status === 'Available' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-blue-100 text-blue-700 border-blue-200'
                             }`}>{room.status}</span>
                           </td>
-                          <td className="py-3 px-6">
+                          <td className="py-4 px-6">
                             <div className="flex justify-end gap-2.5 shrink-0">
                                <ActionIcon onClick={(e) => { e.stopPropagation(); openEdit(room); }} title="Edit Room" ringColor="orange-500" className="bg-orange-50 text-orange-600 border border-orange-100">
                                 <Pencil className="w-4 h-4" />
@@ -561,7 +569,7 @@ function MembersMaster({ setError, setLoading, setActiveTab }) {
     return (
       <div className="flex-1 flex flex-col min-h-0 space-y-4 w-full">
         <HeaderSkeleton />
-        <ContentCard>
+        <ContentCard className="flex-1">
           <div className="lg:hidden flex-1 overflow-auto p-4 space-y-2">
             {[...Array(6)].map((_, i) => (
               <MobileCardSkeleton key={i} />
@@ -597,7 +605,7 @@ function MembersMaster({ setError, setLoading, setActiveTab }) {
   return (
     <div className="flex-1 flex flex-col min-h-0 space-y-3 w-full">
       <SharedMasterHeader activeTab="members" setActiveTab={setActiveTab} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onAdd={() => { resetForm(); setShowForm(true); }} addLabel="Add Member" themeColor="emerald" />
-      <ContentCard>
+      <ContentCard className="flex-1">
         {/* ===== MOBILE CARD VIEW (< lg) ===== */}
         <div className="lg:hidden overflow-auto flex-1 custom-scrollbar scroll-smooth overscroll-contain">
           {paginatedMembers.length > 0 ? (
@@ -647,10 +655,10 @@ function MembersMaster({ setError, setLoading, setActiveTab }) {
                     {paginatedMembers.length > 0 ? (
                       paginatedMembers.map(m => (
                         <tr key={m.id} className="hover:bg-emerald-50/40 transition-all duration-200 group cursor-pointer border-l-4 border-transparent hover:border-emerald-600">
-                          <td className="py-3 px-6"><div className="flex flex-col gap-1.5 min-w-0"><p className="text-sm font-bold text-gray-900 group-hover:text-emerald-700 transition-colors tracking-tight leading-relaxed truncate">{m.name}</p><div className="flex items-center gap-2 min-w-0"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">Member ID: {m.membership_no}</span></div></div></td>
-                          <td className="py-3 px-6 text-sm font-medium"><div className="flex flex-col gap-1.5 min-w-0"><div className="flex items-center gap-2 min-w-0"><Mail className="w-3.5 h-3.5 text-emerald-500 shrink-0" /><span className="font-bold tracking-tight truncate">{m.email}</span></div><div className="flex items-center gap-2 min-w-0"><Phone className="w-3.5 h-3.5 shrink-0" /><span className="font-bold tabular-nums truncate">{m.mobile_no}</span></div></div></td>
-                          <td className="py-3 px-6 text-center"><span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${m.is_active ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>{m.is_active ? 'Active' : 'Locked'}</span></td>
-                          <td className="py-3 px-6"><div className="flex justify-end gap-2.5 shrink-0"><ActionIcon onClick={(e) => { e.stopPropagation(); setEditingMember(m); setForm({ name: m.name || "", membership_no: m.membership_no || "", mobile_no: m.mobile_no || "", email: m.email || "", address: m.address || "", is_active: m.is_active === null ? true : !!m.is_active }); setShowForm(true); }} title="Edit Member" ringColor="emerald-500" className="bg-emerald-50 text-emerald-600 border border-emerald-100"><Pencil className="w-4 h-4" /></ActionIcon><ActionIcon onClick={(e) => { e.stopPropagation(); navigate(`/masters/members/${m.id}`); }} title="View Member" ringColor="blue-500" className="bg-blue-50 text-blue-600 border border-blue-100"><Eye className="w-4 h-4" /></ActionIcon></div></td>
+                          <td className="py-4 px-6"><div className="flex flex-col gap-1.5 min-w-0"><p className="text-sm font-bold text-gray-900 group-hover:text-emerald-700 transition-colors tracking-tight leading-relaxed truncate">{m.name}</p><div className="flex items-center gap-2 min-w-0"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">Member ID: {m.membership_no}</span></div></div></td>
+                          <td className="py-4 px-6 text-sm font-medium"><div className="flex flex-col gap-1.5 min-w-0"><div className="flex items-center gap-2 min-w-0"><Mail className="w-3.5 h-3.5 text-emerald-500 shrink-0" /><span className="font-bold tracking-tight truncate">{m.email}</span></div><div className="flex items-center gap-2 min-w-0"><Phone className="w-3.5 h-3.5 shrink-0" /><span className="font-bold tabular-nums truncate">{m.mobile_no}</span></div></div></td>
+                          <td className="py-4 px-6 text-center"><span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide border ${m.is_active ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>{m.is_active ? 'Active' : 'Locked'}</span></td>
+                          <td className="py-4 px-6"><div className="flex justify-end gap-2.5 shrink-0"><ActionIcon onClick={(e) => { e.stopPropagation(); setEditingMember(m); setForm({ name: m.name || "", membership_no: m.membership_no || "", mobile_no: m.mobile_no || "", email: m.email || "", address: m.address || "", is_active: m.is_active === null ? true : !!m.is_active }); setShowForm(true); }} title="Edit Member" ringColor="emerald-500" className="bg-emerald-50 text-emerald-600 border border-emerald-100"><Pencil className="w-4 h-4" /></ActionIcon><ActionIcon onClick={(e) => { e.stopPropagation(); navigate(`/masters/members/${m.id}`); }} title="View Member" ringColor="blue-500" className="bg-blue-50 text-blue-600 border border-blue-100"><Eye className="w-4 h-4" /></ActionIcon></div></td>
                         </tr>
                       ))
                     ) : (

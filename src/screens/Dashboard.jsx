@@ -6,7 +6,7 @@ import {
   Users, Clock, Home, Hotel, Search, Plus, 
   LogOut, RefreshCw, AlertCircle, Eye,
   ChevronRight, ArrowRight, Bed, BarChart3,
-  Calendar, Info, Activity, Zap, Target
+  Calendar, Info, Activity, Zap, Target, IndianRupee
 } from "lucide-react";
 import { 
   isSameDay, startOfDay, parseISO, format, differenceInDays, 
@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [view, setView] = useState("today"); // today | week | month
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [revenueTab, setRevenueTab] = useState("today");
 
   /* ================= FETCH DATA ================= */
   const fetchData = useCallback(async (isSilent = false) => {
@@ -99,6 +100,39 @@ export default function Dashboard() {
     }
     return false;
   }, [view, today]);
+
+  const revenueData = useMemo(() => {
+    if (!bookings) return { totalRevenue: 0 };
+
+    const isRevInRange = (date) => {
+      if (!date) return false;
+      if (revenueTab === 'today') return isSameDay(date, today);
+      if (revenueTab === 'week') return isWithinInterval(date, { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) });
+      if (revenueTab === 'month') return isWithinInterval(date, { start: startOfMonth(today), end: endOfMonth(today) });
+      return false;
+    };
+
+    const revBookings = bookings.filter(b => {
+      if (b.status === STATUS.CANCELLED) return false;
+      const ci = b.check_in ? parseISO(b.check_in) : null;
+      const co = b.check_out ? parseISO(b.check_out) : null;
+      return (ci && isRevInRange(ci)) || (co && isRevInRange(co));
+    });
+
+    const totalRevenue = revBookings.reduce((sum, b) => {
+      return sum + Number(b.total_amount || b.total_amt || 0);
+    }, 0);
+
+    const collected = revBookings.reduce((sum, b) => {
+      const total = Number(b.total_amount || b.total_amt || 0);
+      const paid = Number(b.total_paid || b.paid_amount || 0);
+      return sum + Math.min(paid, total);
+    }, 0);
+
+    const pending = Math.max(totalRevenue - collected, 0);
+
+    return { totalRevenue, collected, pending };
+  }, [bookings, revenueTab, today]);
 
   const dashboardData = useMemo(() => {
     // 1. Source Data for Operational Table (Arrivals or Departures in range)
@@ -253,12 +287,12 @@ export default function Dashboard() {
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <PageLayout className="p-0 lg:h-full lg:overflow-hidden">
-      <div className="lg:flex-1 flex flex-col lg:min-h-0 lg:overflow-hidden">
-        <div className="lg:flex-1 flex flex-col space-y-3 pb-3 lg:min-h-0">
+    <PageLayout className="p-0 h-full overflow-hidden">
+      <div className="lg:flex-1 flex flex-col lg:min-h-0">
+        <div className="lg:flex-1 flex flex-col gap-4 lg:min-h-0">
           
-          {/* 1. TOP STATS ROW - Top on Mobile & Desktop, Bottom on Tablet */}
-          <div className="order-1 md:order-2 lg:order-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
+          {/* 1. TOP STATS ROW - Always visible on Mobile & Desktop */}
+          <div className="order-3 lg:order-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-0 mb-4">
             <StatCard title="Check-ins Today" value={dashboardData.checkInsCount} icon={<Users className="w-5 h-5"/>} color="blue" />
             <StatCard title="Check-outs Today" value={dashboardData.checkOutsCount} icon={<LogOut className="w-5 h-5"/>} color="orange" />
             <StatCard title="Available Rooms" value={dashboardData.availableCount} icon={<Home className="w-5 h-5"/>} color="green" />
@@ -266,40 +300,40 @@ export default function Dashboard() {
           </div>
 
           {/* 2. MAIN GRID (Operational Hub + Quick Panel) */}
-          <div className="lg:flex-1 order-2 md:order-1 lg:order-2 grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-3 items-stretch lg:min-h-0">
+          <div className="lg:flex-1 order-1 lg:order-none grid grid-cols-1 lg:grid-cols-[7.5fr_2.5fr] gap-6 items-start lg:min-h-0">
             
             {/* LEFT: OPERATIONS HUB - Priority 1 on Mobile */}
-            <div className="lg:relative order-1 flex flex-col lg:flex-1 lg:min-h-0">
-              <div className="lg:flex-1 flex flex-col gap-3 p-0.5 lg:min-h-0">
+            <div className="lg:relative order-2 lg:order-none flex flex-col">
+              <div className="lg:flex-1 flex flex-col gap-4 p-0 lg:min-h-0">
                 
-                <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg rounded-2xl p-4 flex justify-between items-center ring-1 ring-black/5">
-                  <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center">
+                <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-[0_6px_20px_rgba(0,0,0,0.06)] rounded-2xl px-4 py-4 sm:px-5 sm:py-5 flex justify-between items-center ring-1 ring-black/5 min-h-[56px]">
+                  <div className="flex items-center gap-3 min-w-0">
+                     <div className="w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center shrink-0">
                         <BarChart3 className="w-4 h-4 text-blue-600" />
                      </div>
-                     <div className="flex-1">
-                       <p className="text-sm text-gray-700 font-semibold tracking-tight">
+                     <div className="flex-1 min-w-0">
+                       <p className="text-[13px] sm:text-sm text-gray-700 font-semibold tracking-tight truncate">
                         <span className="tabular-nums">{dashboardData.totalCount}</span> operations scheduled for <span className="capitalize">{view}</span>
                        </p>
                      </div>
                   </div>
-                  <button onClick={() => navigate(`/bookings?view=${view}`)} className="text-[11px] text-blue-600 font-bold uppercase tracking-wider hover:underline">
+                  <button onClick={() => navigate(`/bookings?view=${view}`)} className="shrink-0 text-[10px] sm:text-[11px] text-blue-600 font-bold uppercase tracking-wider hover:underline ml-2">
                     View All
                   </button>
                 </div>
 
-                <ContentCard className="lg:flex-1 flex flex-col lg:min-h-0">
-                  <div className="lg:flex-1 flex flex-col lg:overflow-hidden text-gray-900">
-                    <div className="p-4 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <ContentCard className="flex flex-col h-[560px] lg:h-[600px] lg:hover:-translate-y-0.5 lg:hover:shadow-[0_12px_32px_rgba(0,0,0,0.10)] transition-all">
+                  <div className="lg:flex-1 flex flex-col lg:overflow-hidden text-gray-900 pb-2">
+                    <div className="px-4 py-4 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-lg">
                           <Activity className="w-5 h-5 text-blue-600" />
                         </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Operational Hub</h2>
-                            <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex flex-col">
+                            <h2 className="text-lg font-semibold text-gray-900 tracking-tight leading-none">Operational Hub</h2>
+                            <div className="flex items-center gap-2 mt-1">
                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-                                <p className="text-xs sm:text-[11px] text-green-600 font-bold uppercase tracking-widest leading-none">Live</p>
+                                <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest leading-none">Live</p>
                             </div>
                         </div>
 
@@ -332,7 +366,7 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col h-[360px] sm:h-[400px] md:h-[440px] overflow-y-scroll lg:h-auto lg:min-h-0 lg:flex-1 lg:overflow-y-auto scrollbar-thin" style={{ touchAction: 'pan-y' }}>
+                    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto scrollbar-thin" style={{ touchAction: 'pan-y' }}>
                       {dashboardData.filteredList.length > 0 ? (
                         <table className="w-full text-left border-separate border-spacing-0 min-w-[800px]">
                           <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm text-[10px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-100">
@@ -434,22 +468,24 @@ export default function Dashboard() {
             </div>
 
             {/* RIGHT: QUICK PANEL - Priority 3 on Mobile */}
-            <div className="flex flex-col gap-3 order-3 lg:order-2">
-              <ContentCard>
-                <div className="p-4 sm:p-5 border-b border-gray-50 flex items-center gap-3">
-                   <div className="w-10 h-10 flex items-center justify-center bg-orange-50 rounded-lg">
-                      <Target className="w-5 h-5 text-orange-600" />
+            <div className="flex flex-col gap-4 order-1 lg:order-none h-full">
+              <ContentCard className="flex flex-col flex-1 order-5 lg:hover:-translate-y-0.5 lg:hover:shadow-[0_12px_32px_rgba(0,0,0,0.10)] transition-all">
+                <div className="px-4 py-4 sm:px-5 sm:py-5 border-b border-gray-50 flex items-start justify-between gap-3">
+                   <div className="flex items-center gap-3 min-w-0">
+                     <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-orange-50 rounded-lg shrink-0">
+                        <Target className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+                     </div>
+                     <div className="min-w-0">
+                        <h2 className="text-base font-semibold text-gray-900 leading-none truncate capitalize">{view} Summary</h2>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1.5 leading-none">Quick Stats</p>
+                     </div>
                    </div>
-                   <div>
-                      <h2 className="text-lg font-semibold text-gray-900 tracking-tight capitalize">{view} Summary</h2>
-                      <div className="flex items-center gap-2 mt-0.5">
-                         <p className="text-xs sm:text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-none">Quick Stats</p>
-                      </div>
-                   </div>
+                   <p className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums shrink-0 mt-0.5">
+                     {dashboardData.totalCount}
+                   </p>
                 </div>
-                <div className="p-4 sm:p-5 space-y-3">
-                    <p className="text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">{dashboardData.totalCount}</p>
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                <div className="px-4 py-4 sm:px-5 sm:py-5">
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <p className="text-lg font-bold text-blue-600 tabular-nums">{dashboardData.checkInsCount}</p>
                             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Check-ins</p>
@@ -462,47 +498,79 @@ export default function Dashboard() {
                 </div>
               </ContentCard>
 
-              <ContentCard>
-                <div className="p-4 sm:p-5 border-b border-gray-50 flex items-center gap-3">
-                   <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-lg">
-                      <Zap className="w-5 h-5 text-blue-600" />
-                   </div>
-                   <div>
-                     <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Quick Actions</h2>
-                     <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs sm:text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-none">Shortcuts</p>
+              <ContentCard className="p-0 order-1 lg:hover:-translate-y-0.5 lg:hover:shadow-[0_12px_32px_rgba(0,0,0,0.10)] transition-all flex flex-col flex-1">
+                <div className="px-4 py-4 sm:px-5 sm:py-5 border-b border-gray-50 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                     <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-blue-50 rounded-lg shrink-0">
+                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                      </div>
-                   </div>
+                     <div className="min-w-0">
+                        <h2 className="text-base font-semibold text-gray-900 leading-none truncate">Revenue</h2>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1.5 leading-none">Overview</p>
+                     </div>
+                  </div>
+                  <div className="flex bg-gray-100 p-1 rounded-lg shrink-0">
+                    {['today', 'week', 'month'].map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setRevenueTab(tab)}
+                        className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
+                          revenueTab === tab 
+                            ? 'bg-white text-blue-600 shadow-sm' 
+                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="p-4 sm:p-5 flex gap-3">
-                  <ActionButton label="New Booking" icon={<Plus className="w-4 h-4" />} onClick={() => navigate('/bookings')} color="blue" />
-                  <ActionButton label="Search" icon={<Search className="w-4 h-4" />} onClick={() => navigate('/bookings')} color="gray" />
+                <div className="flex-1 px-4 py-4 flex flex-col justify-center items-center">
+                  <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900 tabular-nums">
+                    ₹ {revenueData.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  
+                  <div className="mt-3 w-full grid grid-cols-2 gap-2">
+                    {/* Collected */}
+                    <div className="bg-emerald-50 rounded-xl p-2.5 text-center border border-emerald-100/50 group hover:bg-emerald-100/50 transition-colors">
+                      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-1.5 leading-none">Collected</p>
+                      <p className="text-sm font-semibold text-emerald-700 tabular-nums leading-none">
+                        ₹ {revenueData.collected.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+
+                    {/* Pending */}
+                    <div className="bg-orange-50 rounded-xl p-2.5 text-center border border-orange-100/50 group hover:bg-orange-100/50 transition-colors">
+                      <p className="text-[10px] text-orange-600 font-bold uppercase tracking-widest mb-1.5 leading-none">Pending</p>
+                      <p className="text-sm font-semibold text-orange-700 tabular-nums leading-none">
+                        ₹ {revenueData.pending.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </ContentCard>
 
-              <ContentCard>
-                <div className="p-4 sm:p-5 border-b border-gray-50 flex items-center gap-3">
-                   <div className="w-10 h-10 flex items-center justify-center bg-purple-50 rounded-lg">
-                      <Bed className="w-5 h-5 text-purple-600" />
-                   </div>
-                   <div>
-                      <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Room Availability</h2>
-                      <div className="flex items-center gap-2 mt-0.5">
-                          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-                          <p className="text-xs sm:text-[11px] text-green-600 font-bold uppercase tracking-widest leading-none">Live Status</p>
+              <ContentCard className="flex flex-col flex-1 order-2 lg:hover:-translate-y-0.5 lg:hover:shadow-[0_12px_32px_rgba(0,0,0,0.10)] transition-all">
+                <div className="px-4 py-4 sm:px-5 sm:py-5 border-b border-gray-50 flex items-center justify-between gap-2">
+                   <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-purple-50 rounded-lg shrink-0">
+                         <Bed className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                      </div>
+                      <div className="min-w-0">
+                         <h2 className="text-base sm:text-lg font-semibold text-gray-900 tracking-tight leading-none truncate">Room Availability</h2>
+                         <div className="flex items-center gap-2 mt-1">
+                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)] shrink-0"></span>
+                             <p className="text-[10px] sm:text-[11px] text-green-600 font-bold uppercase tracking-widest leading-none truncate">Live Status</p>
+                         </div>
                       </div>
                    </div>
+                   <button onClick={() => navigate('/masters')} className="shrink-0 text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors flex items-center gap-0.5 group">
+                      Manage <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                   </button>
                 </div>
-                <div className="p-4 sm:p-5 space-y-3">
+                <div className="flex-1 px-4 py-5 sm:px-5 sm:py-6 flex flex-col justify-center space-y-4">
                   <RoomStatusRow label="Available Now" count={dashboardData.availableCount} color="green" />
                   <RoomStatusRow label="Occupied" count={dashboardData.occupiedCount} color="purple" />
-                </div>
-                <div className="px-4 sm:px-5 pb-4 sm:pb-5">
-                   <div className="pt-3 border-t border-gray-50">
-                      <button onClick={() => navigate('/masters')} className="w-full py-2 text-[10px] text-blue-600 font-bold uppercase tracking-wider hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2">
-                         Manage Rooms <ChevronRight className="w-3 h-3" />
-                      </button>
-                   </div>
                 </div>
               </ContentCard>
             </div>
@@ -524,14 +592,14 @@ function StatCard({ title, value, icon, color }) {
   };
   
   return (
-    <div className="bg-white border border-gray-100 p-4 sm:p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-between group active:scale-[0.98] transition-transform">
+    <div className="bg-white border border-gray-200 p-3 sm:p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] lg:hover:-translate-y-1 lg:hover:shadow-[0_12px_32px_rgba(0,0,0,0.10)] transition-all flex items-center justify-between group active:scale-[0.98]">
       <div className="space-y-1">
         <p className="text-xs sm:text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">
            {title}
         </p>
         <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">{value}</p>
       </div>
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg border ${colors[color]} group-hover:scale-110 transition-transform`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg border ${colors[color]} lg:group-hover:scale-110 lg:transition-transform`}>
         {icon}
       </div>
     </div>
@@ -582,7 +650,7 @@ function RoomStatusRow({ label, count, color }) {
 function EmptyState({ searchTerm }) {
   const navigate = useNavigate();
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 text-center bg-white/50 border-t border-gray-100 space-y-3 sm:space-y-4">
+    <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-10 text-center bg-white/50 border-t border-gray-100 space-y-3 sm:space-y-4">
       <div className="w-10 h-10 sm:w-16 sm:h-16 bg-blue-50 rounded-2xl flex items-center justify-center transition-transform hover:scale-110">
         <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-blue-600" />
       </div>
@@ -624,7 +692,7 @@ function ErrorState({ message, onRetry }) {
 
 function DashboardSkeleton() {
   return (
-    <PageLayout className="p-0">
+    <PageLayout className="p-0 animate-in fade-in duration-500">
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
         <div className="space-y-6">
           {/* 1. Stat Cards Skeleton */}
@@ -640,15 +708,15 @@ function DashboardSkeleton() {
             ))}
           </div>
 
-          <div className="grid grid-cols-12 gap-6 items-stretch h-[540px]">
+          <div className="grid grid-cols-12 gap-4 sm:gap-5 lg:gap-3 items-stretch h-[540px]">
             {/* 2. Operational Hub Skeleton */}
-            <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
+            <div className="col-span-12 lg:col-span-8 flex flex-col gap-4 sm:gap-5 lg:gap-3">
               <div className="h-[72px] bg-white rounded-2xl border border-gray-100 shadow-md flex justify-between items-center px-6 animate-pulse">
                 <div className="h-4 w-48 bg-gray-100 rounded" />
                 <div className="h-4 w-16 bg-gray-100 rounded" />
               </div>
               
-              <ContentCard>
+              <ContentCard className="flex-1">
                 <div className="p-5 border-b border-gray-50 flex justify-between items-center">
                   <div className="space-y-2">
                     <div className="h-5 w-32 bg-gray-100 rounded animate-pulse" />

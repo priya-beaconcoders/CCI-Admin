@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Calendar, User, Users, Home, X, CheckCircle, AlertCircle, Edit2, Pencil, Trash2, Eye, Search, Filter, CreditCard, DollarSign, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
+import { Calendar, User, Users, Home, X, CheckCircle, AlertCircle, Edit2, Pencil, Trash2, Eye, Search, Filter, CreditCard, DollarSign, Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
+import { PageLayout, ActionIcon, EmptyState, MobileCardSkeleton, HeaderSkeleton, ContentCard, Pagination } from "../components/UIComponents";
 
 /* ================= STATUS CONSTANTS ================= */
 const STATUS = {
@@ -60,6 +61,8 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,6 +98,27 @@ export default function Bookings() {
   const prevStatusRef = useRef({});  // Previous status per booking id for rollback
   const syncTimeoutRef = useRef({}); // Per-ID debounced sync timers
   const isMounted     = useRef(true);
+
+  const [isRowsDropdownOpen, setIsRowsDropdownOpen] = useState(false);
+  const rowsDropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (rowsDropdownRef.current && !rowsDropdownRef.current.contains(event.target)) {
+        setIsRowsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Focus input when expanded
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -167,8 +191,7 @@ export default function Bookings() {
         getRooms(),
       ]);
 
-      console.log("📦 RAW BOOKINGS RESPONSE 👉", bookingRes.data);
-      console.log("🏨 RAW ROOMS RESPONSE 👉", roomRes.data);
+
 
       const normalizedBookings = Array.isArray(bookingRes.data.data)
         ? bookingRes.data.data.map(normalizeBooking)
@@ -177,7 +200,7 @@ export default function Bookings() {
       setBookings(normalizedBookings);
 
       const roomsData = Array.isArray(roomRes.data) ? roomRes.data : (roomRes.data?.data || []);
-      console.log("🏨 PROCESSED ROOMS DATA 👉", roomsData);
+
       setRooms(roomsData);
 
       // Initially show all rooms
@@ -199,12 +222,10 @@ export default function Bookings() {
   }, [form.check_in, form.check_out, bookings, editing]);
 
   const checkAvailability = () => {
-    console.log("🔍 CHECKING AVAILABILITY...");
-    console.log("📅 Form Dates:", form.check_in, "to", form.check_out);
-    console.log("🏨 Total Rooms:", rooms.length);
+
 
     if (!form.check_in || !form.check_out || form.check_out <= form.check_in) {
-      console.log("⚠️ Dates invalid or missing, showing all rooms");
+
       setAvailableRooms(rooms);
       return;
     }
@@ -238,7 +259,7 @@ export default function Bookings() {
       })
       .flatMap(booking => booking.room_ids || []); // Handle multiple rooms per booking
 
-    console.log("🚫 Conflicting Room IDs:", conflictingBookingIds);
+
 
     // Filter available rooms and restrict types to Single Suite and Double Suite
     // BUT! Allow the currently selected room even if it has an old type, to prevent it from disappearing
@@ -264,14 +285,14 @@ export default function Bookings() {
     );
 
     if (stillAvailable.length !== form.room_ids.length) {
-      console.log("❌ Some selected rooms are no longer available, updating form");
+
       setForm(prev => ({ ...prev, room_ids: stillAvailable }));
     }
   };
 
   /* ================= FORM ================= */
   const resetForm = () => {
-    console.log("♻️ RESET FORM");
+
     setForm({
       room_ids: [],
       guest_name: "",
@@ -286,8 +307,7 @@ export default function Bookings() {
   };
 
   const submitForm = async () => {
-    console.log("📝 SUBMITTING FORM...");
-    console.log("📦 Selected Room IDs:", form.room_ids);
+
 
     // Validation
     if (form.room_ids.length === 0 || !form.guest_name || !form.check_in || !form.check_out) {
@@ -325,7 +345,7 @@ export default function Bookings() {
       payload.rooms = form.room_ids.map(id => Number(id));
     }
 
-    console.log("🚀 FINAL PAYLOAD 👉", payload);
+
 
     try {
       setErrorMessage("");
@@ -350,12 +370,7 @@ export default function Bookings() {
     if (!window.confirm("Are you sure you want to delete this booking?")) return;
 
     try {
-      console.log("🗑 DELETE BOOKING 👉", id);
-      setErrorMessage("");
-      setLoading(true);
 
-      const response = await deleteBooking(id);
-      console.log("✅ DELETE RESPONSE 👉", response.data);
 
       // Remove from local state
       setBookings((prev) => prev.filter((b) => b.id !== id));
@@ -558,11 +573,7 @@ export default function Bookings() {
     setShowPaymentModal(true);
     setPaymentLoading(true);
     try {
-      console.log("💳 Fetching payments for booking:", booking.id);
-      const res = await getPayments(booking.id);
-      console.log("💰 PAYMENTS RESPONSE RAW:", res.data);
-      console.log("💰 Is res.data an array?", Array.isArray(res.data));
-      console.log("💰 Does res.data have data property?", res.data?.data);
+
 
       // Try different response structures
       let paymentsData = [];
@@ -577,7 +588,7 @@ export default function Bookings() {
         paymentsData = [];
       }
 
-      console.log("💰 PROCESSED PAYMENTS:", paymentsData);
+
       setPayments(paymentsData);
     } catch (err) {
       console.error("❌ Failed to fetch payments", err.response?.data || err);
@@ -614,13 +625,11 @@ export default function Bookings() {
         remarks: paymentForm.remarks || "Payment"
       };
 
-      console.log("💸 ADDING PAYMENT", payload);
-      const response = await addPayment(selectedBookingForPayment.id, payload);
-      console.log("✅ PAYMENT ADDED SUCCESSFULLY", response.data);
+
 
       // Refresh payments list
       const res = await getPayments(selectedBookingForPayment.id);
-      console.log("📋 REFRESHED PAYMENTS RAW:", res.data);
+
 
       // Try different response structures
       let paymentsData = [];
@@ -800,8 +809,7 @@ export default function Bookings() {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 min-h-0 p-0 overflow-hidden w-full">
-      <div className="flex-1 flex flex-col min-h-0 min-w-0 w-full overflow-hidden">
+    <PageLayout>
         {/* Error Message */}
         {errorMessage && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 flex-shrink-0">
@@ -813,68 +821,78 @@ export default function Bookings() {
           </div>
         )}
 
-        {/* Controls */}
-        <div className="sticky top-0 z-20 bg-white/95 supports-[backdrop-filter]:bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-md p-4 mb-6 flex-shrink-0">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-start lg:justify-between gap-4 md:gap-8 lg:gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-              <div className="relative flex-1 sm:w-80 whitespace-nowrap">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by guest or room..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-3 border border-gray-200 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm font-medium transition-all"
-                />
-              </div>
+        {/* Bookings Header - Standardized Style */}
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-md px-3 py-2 h-14 flex items-center justify-between gap-2 mb-4 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="h-10 grow max-w-[200px] relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+              <input
+                type="text"
+                placeholder="Search name/room..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full h-full pl-9 pr-3 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-200 transition-all"
+              />
+            </div>
+          </div>
 
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm font-medium"
-                >
-                  <option value="all">All Status</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="checked-in">Checked-in</option>
-                  <option value="checked-out">Checked-out</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Status Filter Dropdown */}
+            <div className="h-10 relative hidden sm:block">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-full px-3 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-extrabold uppercase tracking-tight text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500/20 cursor-pointer hover:bg-white transition-all appearance-none pr-8"
+              >
+                <option value="all">ALL STATUS</option>
+                <option value="confirmed">CONFIRMED</option>
+                <option value="checked-in">IN-HOUSE</option>
+                <option value="checked-out">CHECKED-OUT</option>
+                <option value="cancelled">CANCELLED</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <ChevronDown className="w-3 h-3" />
               </div>
             </div>
 
             <button
               onClick={() => { resetForm(); setShowForm(true); }}
-              className="w-full md:w-auto flex items-center justify-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors shadow-sm font-medium"
+              className="h-10 px-4 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-200 active:scale-95 flex items-center gap-2"
             >
-              <Plus className="w-5 h-5" />
-              Add Booking
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Booking</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
 
         {/* Bookings - Mobile Cards + Desktop Table */}
-        <div className="flex-1 min-h-0 min-w-0 bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-          {/* ===== MOBILE CARD VIEW (< md) ===== */}
+        <ContentCard>
+          {/* ===== MOBILE CARD VIEW (< lg) ===== */}
           <div className="lg:hidden overflow-auto flex-1 scroll-smooth overscroll-contain custom-scrollbar min-h-0">
             <div className="max-w-3xl mx-auto w-full">
             {paginatedBookings.length > 0 ? (
-              <div className="divide-y divide-gray-100">
+              <div className="p-4 space-y-2">
                 {paginatedBookings.map((b) => (
                   <div
                     key={b.id}
-                    className="p-4 hover:bg-blue-50/40 transition-all duration-200 cursor-pointer active:bg-blue-50/60"
+                    className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-blue-50/40 transition-all duration-200 cursor-pointer shadow-sm group"
                     onClick={() => openDetailModal(b)}
                   >
                     {/* Row 1: Guest Name + Status */}
-                    <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-gray-900 truncate">{b.guest_name}</p>
+                        <p className="text-sm font-bold text-gray-900 truncate leading-tight">{b.guest_name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[11px] text-gray-400 font-medium">#{b.id}</span>
-                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                          <span className="text-[11px] text-gray-500 font-medium">Room {b.room_no}</span>
+                          <span className="text-[10px] text-gray-400 font-medium tracking-tight">#{b.id}</span>
+                          <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
+                          <span className="text-[10px] text-gray-500 font-bold tracking-tight">Room {b.room_no}</span>
                         </div>
                       </div>
                       {editingId === b.id ? (
@@ -912,7 +930,7 @@ export default function Bookings() {
                             }
                           }}
                           disabled={loading || !!loadingMap[b.id]}
-                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border transition-all ${
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-wider border transition-all ${
                             getStatusColor(b.status)
                           } ${
                             loading || (b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED)
@@ -931,19 +949,19 @@ export default function Bookings() {
 
                     {/* Row 2: Dates + Actions */}
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 text-[10px] text-gray-500 font-medium min-w-0 flex-1">
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-blue-500" />
-                          <span className="font-bold tabular-nums">{b.check_in}</span>
+                          <Calendar className="w-2.5 h-2.5 text-blue-400" />
+                          <span className="tabular-nums">{b.check_in}</span>
                         </div>
-                        <span className="text-gray-300">→</span>
+                        <span className="text-gray-200">/</span>
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-gray-400" />
-                          <span className="font-bold tabular-nums">{b.check_out}</span>
+                          <Calendar className="w-2.5 h-2.5 text-gray-300" />
+                          <span className="tabular-nums">{b.check_out}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -959,7 +977,7 @@ export default function Bookings() {
                             setShowForm(true);
                           }}
                           disabled={loading || b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED}
-                          className={`p-1.5 rounded-lg transition-all border shadow-sm ${
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all active:scale-90 border ${
                             loading || b.status === STATUS.CHECKED_OUT || b.status === STATUS.CANCELLED
                               ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
                               : 'bg-orange-50 text-orange-600 border-orange-100'
@@ -974,7 +992,7 @@ export default function Bookings() {
                             navigate(`/bookings/${b.id}`);
                           }}
                           disabled={loading}
-                          className={`p-1.5 rounded-lg transition-all border shadow-sm ${
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all active:scale-90 border ${
                             loading
                               ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
                               : 'bg-blue-50 text-blue-600 border-blue-100'
@@ -989,23 +1007,13 @@ export default function Bookings() {
                 ))}
               </div>
             ) : (
-              <div className="py-20 text-center">
-                <div className="flex flex-col items-center">
-                  <Calendar className="w-10 h-10 text-gray-100 mb-4" />
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">No bookings found</h3>
-                  {searchTerm ? (
-                    <button onClick={() => setSearchTerm("")} className="text-orange-600 text-sm font-bold hover:underline">Clear filters</button>
-                  ) : (
-                    <button
-                      onClick={() => { resetForm(); setShowForm(true); }}
-                      className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add First Booking
-                    </button>
-                  )}
-                </div>
-              </div>
+              <EmptyState 
+                icon={Calendar} 
+                title={searchTerm ? "No matching bookings" : "No bookings found"} 
+                message={searchTerm ? "Try adjusting your search or filters." : "New bookings will appear here once created."}
+                actionText={searchTerm ? "" : "Add First Booking"}
+                onAction={searchTerm ? null : () => { resetForm(); setShowForm(true); }}
+              />
             )}
             </div>
           </div>
@@ -1174,94 +1182,32 @@ export default function Bookings() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="py-20 text-center">
-                        <div className="flex flex-col items-center">
-                            <Calendar className="w-10 h-10 text-gray-100 mb-4" />
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">No bookings found</h3>
-                            {searchTerm ? (
-                                <button onClick={() => setSearchTerm("")} className="text-orange-600 text-sm font-bold hover:underline">Clear filters</button>
-                            ) : (
-                                <button
-                                    onClick={() => { resetForm(); setShowForm(true); }}
-                                    className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Add First Booking
-                                </button>
-                            )}
-                        </div>
+                    <td colSpan="5">
+                        <EmptyState 
+                          icon={Calendar} 
+                          title={searchTerm ? "No matching bookings" : "No bookings found"} 
+                          message={searchTerm ? "Try adjusting your search or filters." : "Start by adding your first reservation."}
+                          actionText={searchTerm ? "" : "Add First Booking"}
+                          onAction={searchTerm ? null : () => { resetForm(); setShowForm(true); }}
+                        />
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
 
-        {/* Pagination Controls */}
-        {filteredBookings.length > 0 && (
-          <div className="mt-auto shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-b-2xl border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
-            <div className="flex items-center gap-6 order-2 sm:order-1">
-              <p className="text-xs text-gray-400 font-bold tracking-tight">
-                Showing <span className="text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-gray-900">{Math.min(currentPage * itemsPerPage, filteredBookings.length)}</span> of <span className="text-gray-900">{filteredBookings.length}</span>
-              </p>
-              
-              <div className="flex items-center gap-2 border-l border-gray-100 pl-6">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rows:</span>
-                <select 
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="bg-transparent border-none text-xs font-bold text-gray-900 rounded-lg focus:ring-2 focus:ring-orange-500/20 py-1 cursor-pointer"
-                >
-                  {[8, 10, 50, 100].map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 order-1 sm:order-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === 1
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-800 hover:bg-orange-50 hover:text-orange-600'
-                  }`}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Prev</span>
-              </button>
-
-              <div className="flex gap-1 mx-2">
-                {[...Array(totalPages)].map((_, i) => (
-                    <button
-                        key={i+1}
-                        onClick={() => setCurrentPage(i+1)}
-                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === i+1 ? 'bg-orange-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}
-                    >
-                        {i+1}
-                    </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className={`p-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${currentPage === totalPages
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-800 hover:bg-orange-50 hover:text-orange-600'
-                  }`}
-              >
-                <span>Next</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+          {/* Pagination Section */}
+          <Pagination 
+            currentPage={currentPage - 1}
+            totalPages={totalPages}
+            totalItems={filteredBookings.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(p) => setCurrentPage(p + 1)}
+            onItemsPerPageChange={setItemsPerPage}
+            themeColor="orange"
+          />
+      </ContentCard>
 
         {/* Booking Form Modal */}
         {showForm && (
@@ -2082,7 +2028,6 @@ export default function Bookings() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   );
 }

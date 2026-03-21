@@ -11,28 +11,28 @@ export const updateBooking = (id, data, options = {}) => api.post(`/bookings/${i
 export const deleteBooking = async (id) => {
   try {
     // First, try to delete any associated payments (might be causing FK constraint)
-    console.log("💳 Fetching payments for booking", id);
+
     const paymentsRes = await api.get(`/bookings/${id}/payments`);
     const payments = Array.isArray(paymentsRes.data) ? paymentsRes.data : (paymentsRes.data?.data || []);
     
-    console.log(`💰 Found ${payments.length} payments to delete first`);
+
     
     // Delete all payments first to avoid foreign key constraints
     for (const payment of payments) {
-      console.log(`🗑️ Deleting payment ${payment.id}...`);
+
       await api.delete(`/payments/${payment.id}`);
     }
     
     // Now try to delete the booking
-    console.log("🗑️ Now deleting booking...", id);
+
     return await api.delete(`/bookings/${id}`);
   } catch (err1) {
-    console.warn("⚠️ DELETE failed, trying POST with _method...", err1.response?.status);
+
     try {
       // Some Laravel servers expect POST with _method for deletes
       return await api.post(`/bookings/${id}`, { _method: "DELETE" });
     } catch (err2) {
-      console.warn("⚠️ POST with _method also failed...", err2.response?.status);
+
       // Throw the original error with more context
       throw err1;
     }

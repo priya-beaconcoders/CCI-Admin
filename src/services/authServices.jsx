@@ -32,7 +32,7 @@ import { setAuth, clearAuth } from "../utils/authStorage";
 export const loginService = async (payload) => {
   const res = await api.post("/login", payload);
 
-  console.log("🔐 FULL LOGIN RESPONSE 👉", res.data);
+
 
   // ✅ Laravel style response
   const token = res.data?.access_token;

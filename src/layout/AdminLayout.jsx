@@ -78,7 +78,7 @@ export default function AdminLayout() {
   const pillHeight = 40;
 
   return (
-    <div className="h-[100dvh] flex overflow-hidden transition-colors duration-300 bg-gradient-to-br from-slate-50 via-white to-blue-50/40">
+    <div className="min-h-screen min-h-[100dvh] lg:h-[100dvh] flex flex-col transition-colors duration-300 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 lg:overflow-hidden">
       
       {sidebarOpen && (
         <div
@@ -164,6 +164,15 @@ export default function AdminLayout() {
 
         {/* Footer - Simplified to Sign Out Only */}
           <div className={`p-3 pb-12 lg:pb-8 border-t border-gray-200 ${collapsed ? 'flex flex-col items-center gap-4' : ''}`}>
+          
+          {/* Mobile-only Clock Display */}
+          <div className="lg:hidden mb-4 px-4 py-3 rounded-xl bg-blue-50/50 border border-blue-100/50 flex items-center gap-3 shadow-sm shadow-blue-500/5">
+            <Clock className="w-4 h-4 text-blue-500" />
+            <span className="text-base font-bold tabular-nums text-blue-600">
+              {currentTime}
+            </span>
+          </div>
+
           <button
             onClick={handleLogout}
             className={`flex items-center transition-all duration-300 group rounded-xl
@@ -182,10 +191,10 @@ export default function AdminLayout() {
       <div className={`
         flex-1 flex flex-col min-w-0 transition-[margin-left] duration-300 ease-in-out
         ${collapsed ? 'lg:ml-16' : 'lg:ml-72'}
-        h-full
+        lg:h-full lg:overflow-hidden
       `}>
-        <header className="no-print sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200/50 flex-shrink-0">
-          <div className="h-16 px-4 md:px-6 lg:px-8 max-w-[1440px] 2xl:max-w-[1600px] mx-auto w-full flex items-center justify-between">
+        <header className="no-print sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200/50 flex-shrink-0 transition-all duration-200">
+          <div className="h-14 sm:h-16 px-4 md:px-6 lg:px-8 max-w-[1440px] 2xl:max-w-[1600px] mx-auto w-full flex items-center justify-between border-b border-gray-50/50 sm:border-none">
             <div className="flex items-center gap-4">
               <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-xl transition-colors">
                 <Menu className="w-5 h-5 text-gray-600 hover:text-gray-900" />
@@ -220,31 +229,25 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 min-h-0 overflow-hidden flex flex-col custom-scrollbar">
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-4 px-4 pb-4 md:px-6 lg:px-6 scrollbar-thin">
-            <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto w-full flex-1 flex flex-col min-h-0 animate-in fade-in duration-500">
+        <main className="flex-1 flex flex-col lg:min-h-0 lg:overflow-hidden">
+          <div className="lg:flex-1 flex flex-col p-0 md:px-6 lg:px-6 lg:min-h-0 lg:overflow-hidden flex-1">
+            <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto w-full lg:flex-1 flex flex-col lg:min-h-0 animate-in fade-in duration-500 lg:overflow-hidden flex-1">
               <Outlet />
             </div>
           </div>
-
-          {/* Footer - Compact */}
-          <footer className="no-print relative border-t shrink-0 border-gray-200 bg-white/80 backdrop-blur-xl">
-            <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
-              <div className="flex items-center gap-2 text-[11px] md:text-xs">
-                <span className="text-gray-400">© {new Date().getFullYear()}</span>
-                <span className="font-medium text-gray-700">Constitution Club of India</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="text-gray-500">System Live</span>
-                </div>
-                <div className="w-px h-3 bg-gray-300"></div>
-                <span className="text-[10px] md:text-xs text-blue-500 font-medium whitespace-nowrap">Developed by Beacon Coders</span>
-              </div>
-            </div>
-          </footer>
         </main>
+        
+        {/* Footer - Compact Single Row */}
+        <footer className="no-print relative border-t shrink-0 border-gray-100 bg-white/95 backdrop-blur-md">
+          <div className="max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-center gap-1 sm:gap-4">
+            <div className="flex items-center gap-1 text-[9px] sm:text-[11px] font-medium tracking-tight">
+              <span className="text-gray-400">© {new Date().getFullYear()}</span>
+              <span className="text-gray-600 font-bold">Constitution Club of India</span>
+              <span className="text-gray-300 mx-0.5">•</span>
+              <span className="text-blue-500/70 font-bold">Developed by Beacon Coders</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

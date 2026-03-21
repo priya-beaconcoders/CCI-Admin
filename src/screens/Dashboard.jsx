@@ -6,7 +6,7 @@ import {
   Users, Clock, Home, Hotel, Search, Plus, 
   LogOut, RefreshCw, AlertCircle, Eye,
   ChevronRight, ArrowRight, Bed, BarChart3,
-  Calendar, Info
+  Calendar, Info, Activity, Zap, Target
 } from "lucide-react";
 import { 
   isSameDay, startOfDay, parseISO, format, differenceInDays, 
@@ -15,6 +15,7 @@ import {
 } from 'date-fns';
 import { getBookings, checkIn, checkOut } from "../services/bookingServices";
 import { getRooms } from "../services/roomServices";
+import { PageLayout, ContentCard, Pagination, ActionIcon } from "../components/UIComponents";
 
 /* ================= CONSTANTS ================= */
 const STATUS = {
@@ -38,6 +39,8 @@ export default function Dashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [actionLoading, setActionLoading] = useState({}); // { bookingId: true }
   const [view, setView] = useState("today"); // today | week | month
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   /* ================= FETCH DATA ================= */
   const fetchData = useCallback(async (isSilent = false) => {
@@ -130,14 +133,7 @@ export default function Dashboard() {
 
     const totalPending = Math.max(totalRevenue - totalCollected, 0);
 
-    // Debug logging as requested via verdict
-    console.log("💰 Revenue Integrity Check:", {
-      view,
-      count: revenueSourceBookings.length,
-      totalRevenue,
-      totalCollected,
-      totalPending
-    });
+
 
     // 4. Operational Events (Individual check-ins/check-outs)
     const tableEvents = [];
@@ -181,23 +177,24 @@ export default function Dashboard() {
         b.id?.toString().includes(term) ||
         (b.rooms?.[0]?.room_no || "").toString().includes(term)
       );
-    }).slice(0, 10);
+    });
 
-    // Placeholder Fill (min 6 rows)
-    const tableRows = [...filteredList];
+    // 7. Pagination
+    const totalCount = filteredList.length;
+    const paginatedList = filteredList.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
     return {
       checkInsCount,
       checkOutsCount,
       occupiedCount,
       availableCount,
-      filteredList: tableRows,
-      totalCount: combinedList.length,
+      filteredList: paginatedList,
+      totalCount,
       totalRevenue,
       totalCollected,
       totalPending
     };
-  }, [bookings, rooms, today, debouncedSearch, isInRange]);
+  }, [bookings, rooms, today, debouncedSearch, isInRange, currentPage, itemsPerPage]);
 
   const handleAction = async (e, id, type) => {
     e.stopPropagation(); // Safe navigation guard
@@ -256,229 +253,202 @@ export default function Dashboard() {
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar pr-1">
-      <div className="space-y-4 pb-4">
-        {/* 1. TOP STATS ROW */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-0.5">
-          <StatCard title="Check-ins Today" value={dashboardData.checkInsCount} icon={<Users className="w-5 h-5"/>} color="blue" />
-          <StatCard title="Check-outs Today" value={dashboardData.checkOutsCount} icon={<LogOut className="w-5 h-5"/>} color="orange" />
-          <StatCard title="Available Rooms" value={dashboardData.availableCount} icon={<Home className="w-5 h-5"/>} color="green" />
-          <StatCard title="Occupied Rooms" value={dashboardData.occupiedCount} icon={<Hotel className="w-5 h-5"/>} color="purple" />
-        </div>
-
-        {/* 2. MAIN GRID (70/30) */}
-        <div className="grid grid-cols-12 gap-4 items-stretch">
+    <PageLayout className="p-0 lg:h-full lg:overflow-hidden">
+      <div className="lg:flex-1 flex flex-col lg:min-h-0 lg:overflow-hidden">
+        <div className="lg:flex-1 flex flex-col space-y-3 pb-3 lg:min-h-0">
           
-          {/* LEFT: OPERATIONS HUB */}
-          <div className="col-span-12 lg:col-span-8 lg:relative order-2 lg:order-1">
-          <div className="flex flex-col gap-4 h-[500px] lg:h-auto lg:absolute lg:inset-0 p-0.5">
+          {/* 1. TOP STATS ROW - Top on Mobile & Desktop, Bottom on Tablet */}
+          <div className="order-1 md:order-2 lg:order-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
+            <StatCard title="Check-ins Today" value={dashboardData.checkInsCount} icon={<Users className="w-5 h-5"/>} color="blue" />
+            <StatCard title="Check-outs Today" value={dashboardData.checkOutsCount} icon={<LogOut className="w-5 h-5"/>} color="orange" />
+            <StatCard title="Available Rooms" value={dashboardData.availableCount} icon={<Home className="w-5 h-5"/>} color="green" />
+            <StatCard title="Occupied Rooms" value={dashboardData.occupiedCount} icon={<Hotel className="w-5 h-5"/>} color="purple" />
+          </div>
+
+          {/* 2. MAIN GRID (Operational Hub + Quick Panel) */}
+          <div className="lg:flex-1 order-2 md:order-1 lg:order-2 grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-3 items-stretch lg:min-h-0">
             
-            <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg rounded-2xl p-4 flex justify-between items-center ring-1 ring-black/5">
-              <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="w-4 h-4 text-blue-600" />
-                 </div>
-                 <div className="flex-1">
-                   <p className="text-sm text-gray-700 font-semibold tracking-tight">
-                    <span className="tabular-nums">{dashboardData.totalCount}</span> operations scheduled for <span className="capitalize">{view}</span>
-                   </p>
-                 </div>
-              </div>
-              <button onClick={() => navigate(`/bookings?view=${view}`)} className="text-[11px] text-blue-600 font-bold uppercase tracking-wider hover:underline">
-                View All
-              </button>
-            </div>
-
-            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5 flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 flex flex-col overflow-hidden rounded-2xl text-gray-900">
-                <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div>
-                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight">Operational Hub</h2>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest">Live</p>
-                        </div>
-                    </div>
-
-                    <div className="flex bg-gray-100 p-1 rounded-xl w-fit shrink-0">
-                      {["today", "week", "month"].map(v => (
-                        <button
-                          key={v}
-                          onClick={() => setView(v)}
-                          className={`w-16 sm:w-20 py-1 text-[10px] uppercase tracking-wider rounded-lg font-bold transition-all ${
-                            view === v
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "text-gray-500 hover:text-gray-900"
-                          }`}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
+            {/* LEFT: OPERATIONS HUB - Priority 1 on Mobile */}
+            <div className="lg:relative order-1 flex flex-col lg:flex-1 lg:min-h-0">
+              <div className="lg:flex-1 flex flex-col gap-3 p-0.5 lg:min-h-0">
+                
+                <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg rounded-2xl p-4 flex justify-between items-center ring-1 ring-black/5">
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 bg-white border border-gray-100 rounded-lg flex items-center justify-center">
+                        <BarChart3 className="w-4 h-4 text-blue-600" />
+                     </div>
+                     <div className="flex-1">
+                       <p className="text-sm text-gray-700 font-semibold tracking-tight">
+                        <span className="tabular-nums">{dashboardData.totalCount}</span> operations scheduled for <span className="capitalize">{view}</span>
+                       </p>
+                     </div>
                   </div>
-                  
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                    <input 
-                      type="text"
-                      placeholder="Search name, ID, or room..."
-                      className="w-full pl-10 pr-4 py-2 bg-white/60 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-400 font-medium"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                  <button onClick={() => navigate(`/bookings?view=${view}`)} className="text-[11px] text-blue-600 font-bold uppercase tracking-wider hover:underline">
+                    View All
+                  </button>
+                </div>
+
+                <ContentCard className="lg:flex-1 flex flex-col lg:min-h-0">
+                  <div className="lg:flex-1 flex flex-col lg:overflow-hidden text-gray-900">
+                    <div className="p-4 sm:p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-lg">
+                          <Activity className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Operational Hub</h2>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                                <p className="text-xs sm:text-[11px] text-green-600 font-bold uppercase tracking-widest leading-none">Live</p>
+                            </div>
+                        </div>
+
+                        <div className="flex bg-gray-100 p-1 rounded-xl w-fit shrink-0">
+                          {["today", "week", "month"].map(v => (
+                            <button
+                              key={v}
+                              onClick={() => { setView(v); setCurrentPage(0); }}
+                              className={`w-16 sm:w-20 py-1 text-[10px] uppercase tracking-wider rounded-lg font-bold transition-all ${
+                                view === v
+                                  ? "bg-blue-600 text-white shadow-sm"
+                                  : "text-gray-500 hover:text-gray-900"
+                              }`}
+                            >
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                        <input 
+                          type="text"
+                          placeholder="Search name, ID, or room..."
+                          className="w-full pl-10 pr-4 py-2 bg-white/60 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-400 font-medium"
+                          value={searchTerm}
+                          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(0); }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col h-[360px] sm:h-[400px] md:h-[440px] overflow-y-scroll lg:h-auto lg:min-h-0 lg:flex-1 lg:overflow-y-auto scrollbar-thin" style={{ touchAction: 'pan-y' }}>
+                      {dashboardData.filteredList.length > 0 ? (
+                        <table className="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                          <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm text-[10px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-100">
+                            <tr>
+                              <th className="pl-8 pr-6 py-4 leading-none text-gray-600">Guest & Details</th>
+                              <th className="px-6 py-4 leading-none text-gray-600">Room</th>
+                              <th className="px-6 py-4 block sm:table-cell leading-none text-gray-600">Arrival / Departure</th>
+                              <th className="px-6 py-4 hidden md:table-cell leading-none text-gray-600">Status</th>
+                              <th className="px-6 py-4 text-right leading-none text-gray-600">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {dashboardData.filteredList.map((booking, index) => (
+                              <tr 
+                                key={`${booking.id}-${booking.opType}`} 
+                                onClick={() => navigate(`/bookings/${booking.id}`)}
+                                className="hover:bg-gray-50 transition-all cursor-pointer group border-l-4 border-transparent hover:border-blue-600 relative active:scale-[0.98] transition-transform"
+                              >
+                                <td className="pl-8 pr-6 py-4">
+                                  <div className="flex items-center gap-2 mb-1">
+                                      <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors text-sm tracking-tight leading-relaxed">{booking.guest_name}</p>
+                                      <div className="flex gap-1">
+                                          {booking.opType === 'both' ? (
+                                            <>
+                                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter bg-blue-50 text-blue-600">Arrival</span>
+                                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter bg-orange-50 text-orange-600">Departure</span>
+                                            </>
+                                          ) : (
+                                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ${
+                                                booking.opType === 'check-in' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
+                                            }`}>
+                                                {booking.opType === 'check-in' ? 'Arrival' : 'Departure'}
+                                            </span>
+                                          )}
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                      <p className="text-[10px] text-gray-400 font-bold tracking-tight">#{booking.id}</p>
+                                      <span className="text-gray-300">•</span>
+                                      <p className="text-[10px] text-gray-500 font-bold whitespace-nowrap">
+                                          {getNights(booking.check_in, booking.check_out)} Nights • ₹{booking.total_amount || booking.total_amt || "0"}
+                                      </p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold text-gray-600 uppercase">
+                                      {booking.rooms?.[0]?.room_no || "—"}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 block sm:table-cell">
+                                  <div className="text-[10px] font-bold space-y-1">
+                                    <div className="flex items-center gap-2 text-gray-700">
+                                        <ArrowRight className={`w-2.5 h-2.5 ${(booking.opType === 'check-in') ? 'text-blue-500' : 'text-gray-300'}`} />
+                                        <span className={(booking.opType === 'check-in') ? 'text-gray-900' : 'text-gray-400 font-medium'}>{formatDateSafe(booking.check_in)}</span>
+                                    </div>
+                                    <p className="flex items-center gap-2">
+                                        <LogOut className={`w-2.5 h-2.5 ${(booking.opType === 'check-out') ? 'text-orange-500' : 'text-gray-300'}`} />
+                                        <span className={(booking.opType === 'check-out') ? 'text-gray-900' : 'text-gray-400 font-medium'}>{formatDateSafe(booking.check_out)}</span>
+                                    </p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 hidden md:table-cell">
+                                  <StatusBadge status={booking.status} />
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <div className="flex justify-end gap-2.5">
+                                    <ActionIcon 
+                                      onClick={(e) => { e.stopPropagation(); navigate(`/bookings/${booking.id}`); }}
+                                      title="View Details"
+                                      ringColor="blue-500"
+                                      className="bg-blue-50 text-blue-600 border border-blue-100"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </ActionIcon>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                           <EmptyState searchTerm={searchTerm} />
+                        </div>
+                      )}
+                    </div>
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(dashboardData.totalCount / itemsPerPage) || 1}
+                      totalItems={dashboardData.totalCount}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
+                      themeColor="blue"
                     />
                   </div>
-                </div>
-
-                <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border-t border-gray-100 transition-all duration-150 ease-out pb-8 flex flex-col" style={{ scrollbarGutter: 'stable' }}>
-                  {dashboardData.filteredList.length > 0 ? (
-                    <table className="w-full text-left">
-                      <thead className="bg-gray-50 text-[10px] font-medium text-gray-500 uppercase tracking-widest border-b border-gray-100">
-                        <tr>
-                          <th className="pl-8 pr-6 py-3.5">Guest & Details</th>
-                          <th className="px-6 py-3.5">Room</th>
-                          <th className="px-6 py-3.5 block sm:table-cell">Arrival / Departure</th>
-                          <th className="px-6 py-3.5 hidden md:table-cell">Status</th>
-                          <th className="px-6 py-3.5 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {dashboardData.filteredList.map((booking, index) => (
-                          <tr 
-                            key={`${booking.id}-${booking.opType}`} 
-                            onClick={() => navigate(`/bookings/${booking.id}`)}
-                            className="hover:bg-gray-50 transition-all cursor-pointer group border-l-4 border-transparent hover:border-blue-600 relative"
-                          >
-                            <td className="pl-8 pr-6 py-4">
-                              <div className="flex items-center gap-2 mb-1">
-                                 <p className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-sm tracking-tight">{booking.guest_name}</p>
-                                 <div className="flex gap-1">
-                                    {booking.opType === 'both' ? (
-                                        <>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter bg-blue-50 text-blue-600">Arrival</span>
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter bg-orange-50 text-orange-600">Departure</span>
-                                        </>
-                                    ) : (
-                                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ${
-                                            booking.opType === 'check-in' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
-                                        }`}>
-                                            {booking.opType === 'check-in' ? 'Arrival' : 'Departure'}
-                                        </span>
-                                    )}
-                                 </div>
-                                 {index === 0 && !debouncedSearch && view === 'today' && (
-                                    <span className="text-[9px] text-green-600 font-bold bg-green-50 px-1 rounded animate-pulse">NEXT</span>
-                                 )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                 <p className="text-[10px] text-gray-400 font-medium tracking-tight">#{booking.id}</p>
-                                 <span className="text-gray-300">•</span>
-                                 <p className="text-[10px] text-gray-500 font-medium whitespace-nowrap">
-                                    {getNights(booking.check_in, booking.check_out)} Nights • ₹{booking.total_amount || booking.total_amt || "0"}
-                                 </p>
-                              </div>
-                              {/* Payment Line - Final stabilized Logic */}
-                              <div className="flex items-center gap-2 mt-0.5">
-                                 <p className={`text-[10px] font-bold ${((Number(booking.total_amt ?? booking.total_amount ?? 0) - Math.min(Number(booking.total_paid ?? 0), Number(booking.total_amt ?? booking.total_amount ?? 0))) > 0) ? 'text-red-500' : 'text-green-600'}`}>
-                                    {(Number(booking.total_amt ?? booking.total_amount ?? 0) - Math.min(Number(booking.total_paid ?? 0), Number(booking.total_amt ?? booking.total_amount ?? 0))) > 0 
-                                      ? `Due ₹${Number(booking.total_amt ?? booking.total_amount ?? 0) - Math.min(Number(booking.total_paid ?? 0), Number(booking.total_amt ?? booking.total_amount ?? 0))}`
-                                      : `Paid ₹${booking.total_amt ?? booking.total_amount ?? "0"}`}
-                                 </p>
-                                 {(Number(booking.total_amt ?? booking.total_amount ?? 0) - Math.min(Number(booking.total_paid ?? 0), Number(booking.total_amt ?? booking.total_amount ?? 0))) > 5000 && (
-                                   <span className="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100 font-bold uppercase tracking-tight">
-                                      HIGH PENDING
-                                   </span>
-                                 )}
-                              </div>
-                              {booking.status === STATUS.PENDING && (booking.opType === 'check-in' || booking.opType === 'both') && (
-                                <p className="text-[10px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
-                                   <Clock className="w-2.5 h-2.5" /> Awaiting Check-in
-                                </p>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="px-2 py-1 bg-gray-50 border border-gray-100 rounded-lg text-xs font-semibold text-gray-600">
-                                 {booking.rooms?.[0]?.room_no || "—"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 block sm:table-cell">
-                              <div className="text-[10px] font-medium space-y-1">
-                                <div className="flex items-center gap-2 text-gray-700">
-                                    <ArrowRight className={`w-2.5 h-2.5 ${(booking.opType === 'check-in' || booking.opType === 'both') ? 'text-blue-500 font-bold' : 'text-gray-300'}`} />
-                                    <span className={(booking.opType === 'check-in' || booking.opType === 'both') ? 'font-bold' : ''}>{formatDateSafe(booking.check_in)}</span>
-                                    {getUrgency(booking) && (
-                                        <span className="text-red-500 font-bold ml-1 animate-pulse flex items-center gap-1">
-                                          <AlertCircle className="w-2.5 h-2.5" /> {getUrgency(booking)}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="flex items-center gap-2 text-gray-400">
-                                    <LogOut className={`w-2.5 h-2.5 ${(booking.opType === 'check-out' || booking.opType === 'both') ? 'text-orange-500 font-bold' : 'text-gray-300'}`} />
-                                    <span className={(booking.opType === 'check-out' || booking.opType === 'both') ? 'font-bold' : ''}>{formatDateSafe(booking.check_out)}</span>
-                                </p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 hidden md:table-cell">
-                              <StatusBadge status={booking.status} />
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-2.5">
-                                {booking.status === STATUS.PENDING && (booking.opType === 'check-in' || booking.opType === 'both') && (
-                                  <button 
-                                    onClick={(e) => handleAction(e, booking.id, 'checkin')}
-                                    disabled={actionLoading[booking.id]}
-                                    className="px-4 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-md transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
-                                  >
-                                    {actionLoading[booking.id] ? "..." : "Check-in"}
-                                  </button>
-                                )}
-                                {booking.status === STATUS.CHECKED_IN && (booking.opType === 'check-out' || booking.opType === 'both') && (
-                                  <button 
-                                    onClick={(e) => handleAction(e, booking.id, 'checkout')}
-                                    disabled={actionLoading[booking.id]}
-                                    className="px-4 py-1.5 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600 shadow-md transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
-                                  >
-                                    {actionLoading[booking.id] ? "..." : "Check-out"}
-                                  </button>
-                                )}
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); navigate(`/bookings/${booking.id}`); }}
-                                  className="p-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm hidden sm:block active:scale-90"
-                                  title="View Details"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <EmptyState searchTerm={searchTerm} />
-                  )}
-                </div>
+                </ContentCard>
               </div>
             </div>
-          </div>
-          </div>
 
-          {/* RIGHT: QUICK PANEL */}
-          <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 order-1 lg:order-2">
-            
-            {/* A. SUMMARY CARD - STABILIZED */}
-            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
-              <div className="p-5 min-w-[280px]">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate w-32">{view} Summary</h3>
-                  <p className="text-[10px] text-gray-400 italic font-medium">Daily Actions</p>
+            {/* RIGHT: QUICK PANEL - Priority 3 on Mobile */}
+            <div className="flex flex-col gap-3 order-3 lg:order-2">
+              <ContentCard>
+                <div className="p-4 sm:p-5 border-b border-gray-50 flex items-center gap-3">
+                   <div className="w-10 h-10 flex items-center justify-center bg-orange-50 rounded-lg">
+                      <Target className="w-5 h-5 text-orange-600" />
+                   </div>
+                   <div>
+                      <h2 className="text-lg font-semibold text-gray-900 tracking-tight capitalize">{view} Summary</h2>
+                      <div className="flex items-center gap-2 mt-0.5">
+                         <p className="text-xs sm:text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-none">Quick Stats</p>
+                      </div>
+                   </div>
                 </div>
-                <div className="space-y-4">
-                    <div className="flex items-baseline justify-between transition-all">
-                        <p className="text-4xl font-bold text-gray-900 tracking-tighter tabular-nums">
-                            {dashboardData.totalCount}
-                        </p>
-                    </div>
+                <div className="p-4 sm:p-5 space-y-3">
+                    <p className="text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">{dashboardData.totalCount}</p>
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
                         <div>
                             <p className="text-lg font-bold text-blue-600 tabular-nums">{dashboardData.checkInsCount}</p>
@@ -489,67 +459,57 @@ export default function Dashboard() {
                             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Check-outs</p>
                         </div>
                     </div>
+                </div>
+              </ContentCard>
 
-                    {/* Financial Insights - Zero Redesign */}
-                    <div className="pt-4 border-t border-gray-50 space-y-3">
-                        <div className="flex justify-between items-center h-5">
-                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-tight">Room Revenue</p>
-                            <p className="text-base font-bold text-gray-900 tabular-nums">₹{dashboardData.totalRevenue.toLocaleString()}</p>
-                        </div>
-                        <div className="flex justify-between items-center h-5">
-                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-tight">Collected</p>
-                            <p className="text-base font-bold text-green-600 tabular-nums">₹{dashboardData.totalCollected.toLocaleString()}</p>
-                        </div>
-                        <div className="flex justify-between items-center h-5">
-                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-tight">Pending</p>
-                            <p className="text-base font-bold text-red-600 tabular-nums">₹{dashboardData.totalPending.toLocaleString()}</p>
-                        </div>
-                    </div>
+              <ContentCard>
+                <div className="p-4 sm:p-5 border-b border-gray-50 flex items-center gap-3">
+                   <div className="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-lg">
+                      <Zap className="w-5 h-5 text-blue-600" />
+                   </div>
+                   <div>
+                     <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Quick Actions</h2>
+                     <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs sm:text-[11px] text-gray-400 font-bold uppercase tracking-widest leading-none">Shortcuts</p>
+                     </div>
+                   </div>
                 </div>
-              </div>
-            </div>
+                <div className="p-4 sm:p-5 flex gap-3">
+                  <ActionButton label="New Booking" icon={<Plus className="w-4 h-4" />} onClick={() => navigate('/bookings')} color="blue" />
+                  <ActionButton label="Search" icon={<Search className="w-4 h-4" />} onClick={() => navigate('/bookings')} color="gray" />
+                </div>
+              </ContentCard>
 
-            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
-              <div className="p-5">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 tracking-tight">Quick Actions</h3>
-                <div className="flex gap-3">
-                  <ActionButton 
-                    label="New Booking" 
-                    icon={<Plus className="w-4 h-4" />} 
-                    onClick={() => navigate('/bookings')}
-                    color="blue"
-                  />
-                  <ActionButton 
-                    label="Search" 
-                    icon={<Search className="w-4 h-4" />} 
-                    onClick={() => navigate('/bookings')}
-                    color="gray"
-                  />
+              <ContentCard>
+                <div className="p-4 sm:p-5 border-b border-gray-50 flex items-center gap-3">
+                   <div className="w-10 h-10 flex items-center justify-center bg-purple-50 rounded-lg">
+                      <Bed className="w-5 h-5 text-purple-600" />
+                   </div>
+                   <div>
+                      <h2 className="text-lg font-semibold text-gray-900 tracking-tight">Room Availability</h2>
+                      <div className="flex items-center gap-2 mt-0.5">
+                          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                          <p className="text-xs sm:text-[11px] text-green-600 font-bold uppercase tracking-widest leading-none">Live Status</p>
+                      </div>
+                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="shadow-lg rounded-2xl border border-gray-100 bg-white/90 backdrop-blur-sm ring-1 ring-black/5">
-              <div className="p-5 flex flex-col h-full">
-                <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-sm font-semibold text-gray-900 tracking-tight">Room Availability</h3>
-                    <Bed className="w-4 h-4 text-gray-400" />
+                <div className="p-4 sm:p-5 space-y-3">
+                  <RoomStatusRow label="Available Now" count={dashboardData.availableCount} color="green" />
+                  <RoomStatusRow label="Occupied" count={dashboardData.occupiedCount} color="purple" />
                 </div>
-                <div className="space-y-2">
-                  <div>
-                    <RoomStatusRow label="Available Now" count={dashboardData.availableCount} color="green" />
-                    <RoomStatusRow label="Occupied" count={dashboardData.occupiedCount} color="purple" />
-                  </div>
-                  <div className="pt-2 border-t border-gray-50 mt-2">
-                    <RoomStatusRow label="Total Units" count={rooms.length} color="gray" />
-                  </div>
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+                   <div className="pt-3 border-t border-gray-50">
+                      <button onClick={() => navigate('/masters')} className="w-full py-2 text-[10px] text-blue-600 font-bold uppercase tracking-wider hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2">
+                         Manage Rooms <ChevronRight className="w-3 h-3" />
+                      </button>
+                   </div>
                 </div>
-              </div>
+              </ContentCard>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
@@ -564,12 +524,14 @@ function StatCard({ title, value, icon, color }) {
   };
   
   return (
-    <div className="bg-white/90 backdrop-blur-sm p-5 rounded-2xl border border-gray-100 shadow-lg hover:border-blue-200 transition-all flex items-center justify-between group">
-      <div className="space-y-0.5">
-        <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">{title}</p>
-        <p className="text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">{value}</p>
+    <div className="bg-white border border-gray-100 p-4 sm:p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-between group active:scale-[0.98] transition-transform">
+      <div className="space-y-1">
+        <p className="text-xs sm:text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+           {title}
+        </p>
+        <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">{value}</p>
       </div>
-      <div className={`p-2.5 rounded-xl border ${colors[color]} group-hover:scale-110 transition-transform`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg border ${colors[color]} group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
     </div>
@@ -596,7 +558,7 @@ function ActionButton({ label, icon, onClick, color }) {
     return (
         <button 
             onClick={onClick}
-            className={`flex-1 flex items-center justify-center gap-2 h-12 rounded-xl transition-all font-semibold text-xs hover:scale-[1.02] ${bg}`}
+            className={`flex-1 flex items-center justify-center gap-2 h-10 sm:h-12 rounded-xl transition-all font-semibold text-[11px] sm:text-xs hover:scale-[1.02] ${bg}`}
         >
             {icon}
             <span>{label}</span>
@@ -607,8 +569,8 @@ function ActionButton({ label, icon, onClick, color }) {
 function RoomStatusRow({ label, count, color }) {
   const dots = { green: "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]", purple: "bg-purple-500", gray: "bg-gray-400" };
   return (
-    <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-blue-50 transition-colors">
-      <div className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-tighter">
+    <div className="flex items-center justify-between py-1 sm:py-1.5 px-2 rounded-lg hover:bg-blue-50 transition-colors">
+      <div className="flex items-center gap-2 text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-tighter">
         <div className={`w-1.5 h-1.5 rounded-full ${dots[color]}`} />
         <span>{label}</span>
       </div>
@@ -620,23 +582,25 @@ function RoomStatusRow({ label, count, color }) {
 function EmptyState({ searchTerm }) {
   const navigate = useNavigate();
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white/50 border-t border-gray-50">
-      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:scale-110">
-        <Calendar className="w-8 h-8 text-blue-600" />
+    <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 text-center bg-white/50 border-t border-gray-100 space-y-3 sm:space-y-4">
+      <div className="w-10 h-10 sm:w-16 sm:h-16 bg-blue-50 rounded-2xl flex items-center justify-center transition-transform hover:scale-110">
+        <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-blue-600" />
       </div>
-      <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-        {searchTerm ? "No matching operations found" : "No operations scheduled for today"}
-      </h3>
-      <p className="text-gray-500 text-sm mt-1 max-w-[280px] font-medium leading-relaxed">
-        {searchTerm 
-          ? "We couldn't find any results for your search. Try adjusting your filters." 
-          : "New bookings will appear here once created."
-        }
-      </p>
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+          {searchTerm ? "No matching operations found" : "No operations scheduled for today"}
+        </h3>
+        <p className="text-gray-500 text-sm mt-1 max-w-[280px] font-medium leading-relaxed">
+          {searchTerm 
+            ? "We couldn't find any results for your search. Try adjusting your filters." 
+            : "New bookings will appear here once created."
+          }
+        </p>
+      </div>
       {!searchTerm && (
         <button 
           onClick={() => navigate('/bookings')}
-          className="mt-6 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2 transition-all hover:-translate-y-0.5"
+          className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2 transition-all hover:-translate-y-0.5"
         >
           <Plus className="w-4 h-4" /> New Booking
         </button>
@@ -660,89 +624,103 @@ function ErrorState({ message, onRetry }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
-      {/* 1. Stat Cards Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white/90 p-5 rounded-2xl border border-gray-100 shadow-md flex justify-between items-center h-[108px]">
-            <div className="space-y-3">
-              <div className="h-2 w-16 bg-gray-100 rounded animate-shimmer" />
-              <div className="h-8 w-12 bg-gray-100 rounded animate-shimmer" />
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gray-100 animate-shimmer" />
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-12 gap-6 items-stretch h-[540px]">
-        {/* 2. Operational Hub Skeleton */}
-        <div className="col-span-12 lg:col-span-8 space-y-4">
-          <div className="h-[72px] bg-white/90 rounded-2xl border border-gray-100 shadow-md animate-shimmer opacity-50" />
-          
-          <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md flex-1 flex flex-col overflow-hidden">
-            <div className="p-5 border-b border-gray-50 flex justify-between items-center">
-              <div className="space-y-2">
-                <div className="h-5 w-32 bg-gray-100 rounded animate-shimmer" />
-                <div className="h-2 w-20 bg-gray-100 rounded animate-shimmer" />
-              </div>
-              <div className="h-10 w-48 bg-gray-50 rounded-xl animate-shimmer" />
-            </div>
-            <div className="flex-1 p-0">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="border-b border-gray-50 p-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="space-y-2">
-                      <div className="h-4 w-32 bg-gray-100 rounded animate-shimmer" />
-                      <div className="h-2 w-24 bg-gray-50 rounded animate-shimmer" />
-                    </div>
-                  </div>
-                  <div className="h-8 w-16 bg-gray-50 rounded-lg animate-shimmer" />
-                  <div className="h-8 w-24 bg-gray-50 rounded-lg animate-shimmer" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 3. Right Sidebar Skeleton */}
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full">
-          <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md p-5 h-[220px] space-y-6">
-             <div className="flex justify-between items-center">
-                <div className="h-4 w-24 bg-gray-100 rounded animate-shimmer" />
-                <div className="h-2 w-16 bg-gray-50 rounded animate-shimmer" />
-             </div>
-             <div className="h-12 w-full bg-gray-50 rounded-xl animate-shimmer" />
-             <div className="space-y-3">
-                {[...Array(3)].map((_, j) => (
-                  <div key={j} className="flex justify-between">
-                    <div className="h-2 w-20 bg-gray-50 rounded animate-shimmer" />
-                    <div className="h-2 w-12 bg-gray-100 rounded animate-shimmer" />
-                  </div>
-                ))}
-             </div>
-          </div>
-          <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md p-5 h-[120px] flex gap-3">
-             <div className="flex-1 bg-gray-50/50 rounded-xl animate-shimmer" />
-             <div className="flex-1 bg-gray-50/50 rounded-xl animate-shimmer" />
-          </div>
-          <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md p-5 flex-1 flex flex-col space-y-4">
-             <div className="flex justify-between items-center mb-2">
-                <div className="h-4 w-32 bg-gray-100 rounded animate-shimmer" />
-                <div className="h-4 w-4 bg-gray-50 rounded animate-shimmer" />
-             </div>
-             <div className="flex-1 flex flex-col justify-between">
+    <PageLayout className="p-0">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+        <div className="space-y-6">
+          {/* 1. Stat Cards Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white/90 p-5 rounded-2xl border border-gray-100 shadow-md flex justify-between items-center h-[108px]">
                 <div className="space-y-3">
-                   {[...Array(2)].map((_, l) => (
-                     <div key={l} className="h-8 w-full bg-gray-50/50 rounded-lg animate-shimmer" />
-                   ))}
+                  <div className="h-2 w-16 bg-gray-100 rounded animate-shimmer" />
+                  <div className="h-8 w-12 bg-gray-100 rounded animate-shimmer" />
                 </div>
-                <div className="pt-2 border-t border-gray-50 mt-2">
-                   <div className="h-8 w-full bg-gray-50/50 rounded-lg animate-shimmer" />
+                <div className="w-10 h-10 rounded-xl bg-gray-100 animate-shimmer" />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-12 gap-6 items-stretch h-[540px]">
+            {/* 2. Operational Hub Skeleton */}
+            <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
+              <div className="h-[72px] bg-white rounded-2xl border border-gray-100 shadow-md flex justify-between items-center px-6 animate-pulse">
+                <div className="h-4 w-48 bg-gray-100 rounded" />
+                <div className="h-4 w-16 bg-gray-100 rounded" />
+              </div>
+              
+              <ContentCard>
+                <div className="p-5 border-b border-gray-50 flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-5 w-32 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-2 w-20 bg-gray-50 rounded animate-pulse" />
+                  </div>
+                  <div className="h-10 w-48 bg-gray-50 rounded-xl animate-pulse" />
                 </div>
-             </div>
+                <div className="flex-1 p-0 overflow-hidden divide-y divide-gray-50">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="p-6 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="space-y-2">
+                          <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
+                          <div className="h-2 w-24 bg-gray-50 rounded animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="h-8 w-16 bg-gray-50 rounded-lg animate-pulse" />
+                      <div className="h-8 w-24 bg-gray-50 rounded-lg animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+                <div className="p-4 border-t border-gray-50 flex justify-between items-center">
+                  <div className="h-4 w-24 bg-gray-50 rounded animate-pulse" />
+                  <div className="flex gap-2">
+                    <div className="h-8 w-20 bg-gray-50 rounded animate-pulse" />
+                    <div className="h-8 w-20 bg-gray-50 rounded animate-pulse" />
+                  </div>
+                </div>
+              </ContentCard>
+            </div>
+
+            {/* 3. Right Sidebar Skeleton */}
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full">
+              <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md p-5 h-[220px] space-y-6">
+                 <div className="flex justify-between items-center">
+                    <div className="h-4 w-24 bg-gray-100 rounded animate-shimmer" />
+                    <div className="h-2 w-16 bg-gray-50 rounded animate-shimmer" />
+                 </div>
+                 <div className="h-12 w-full bg-gray-50 rounded-xl animate-shimmer" />
+                 <div className="space-y-3">
+                    {[...Array(3)].map((_, j) => (
+                      <div key={j} className="flex justify-between">
+                        <div className="h-2 w-20 bg-gray-50 rounded animate-shimmer" />
+                        <div className="h-2 w-12 bg-gray-100 rounded animate-shimmer" />
+                      </div>
+                    ))}
+                 </div>
+              </div>
+              <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md p-5 h-[120px] flex gap-3">
+                 <div className="flex-1 bg-gray-50/50 rounded-xl animate-shimmer" />
+                 <div className="flex-1 bg-gray-50/50 rounded-xl animate-shimmer" />
+              </div>
+              <div className="bg-white/90 rounded-2xl border border-gray-100 shadow-md p-5 flex-1 flex flex-col space-y-4">
+                 <div className="flex justify-between items-center mb-2">
+                    <div className="h-4 w-32 bg-gray-100 rounded animate-shimmer" />
+                    <div className="h-4 w-4 bg-gray-50 rounded animate-shimmer" />
+                 </div>
+                 <div className="flex-1 flex flex-col justify-between">
+                    <div className="space-y-3">
+                       {[...Array(2)].map((_, l) => (
+                         <div key={l} className="h-8 w-full bg-gray-50/50 rounded-lg animate-shimmer" />
+                       ))}
+                    </div>
+                    <div className="pt-2 border-t border-gray-50 mt-2">
+                       <div className="h-8 w-full bg-gray-50/50 rounded-lg animate-shimmer" />
+                    </div>
+                 </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
